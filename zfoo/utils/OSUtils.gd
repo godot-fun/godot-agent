@@ -12,6 +12,14 @@ static func is_windows() -> bool:
 	return OS.get_name().strip_edges().to_lower() == "windows"
 
 
+static func godot_version() -> String:
+	var version_info := Engine.get_version_info()
+	var version_text := str(version_info.get("string", ""))
+	if StringUtils.is_not_blank(version_text):
+		return version_text
+	return StringUtils.format("{}.{}.{}", version_info.get("major", 0), version_info.get("minor", 0), version_info.get("patch", 0))
+
+
 class ExecResult:
 	var exit_code: int = -1
 	var output: StringBuilder = StringBuilder.new()

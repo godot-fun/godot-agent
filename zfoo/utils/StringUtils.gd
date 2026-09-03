@@ -127,6 +127,41 @@ static func truncate(s: String, max_length: int) -> String:
 	return s.substr(0, max_length - ELLIPSIS.length()) + ELLIPSIS
 
 
+## Returns s with at most max_lines lines; excess lines are dropped with no ellipsis.
+## Example: truncate_lines("a\nb\nc", 2) -> "a\nb"; truncate_lines("a\nb", 3) -> "a\nb"
+static func truncate_lines(s: String, max_lines: int) -> String:
+	if max_lines <= 0:
+		return EMPTY
+	if is_empty(s):
+		return s
+	if s.count("\n") < max_lines:
+		return s
+	var pos := 0
+	for _n in max_lines:
+		var idx := s.find("\n", pos)
+		if idx == -1:
+			return s
+		pos = idx + 1
+	return s.substr(0, pos - 1)
+
+
+## Returns the last max_lines lines of s; earlier lines are dropped with no ellipsis.
+## Example: last_lines("a\nb\nc", 2) -> "b\nc"; last_lines("a\nb", 3) -> "a\nb"
+static func last_lines(s: String, max_lines: int) -> String:
+	if max_lines <= 0:
+		return EMPTY
+	if is_empty(s):
+		return s
+	if s.count("\n") < max_lines:
+		return s
+	var idx := s.length()
+	for _n in max_lines:
+		idx = s.rfind("\n", idx - 1)
+		if idx < 0:
+			return s
+	return s.substr(idx + 1)
+
+
 ## Returns the enum key name for value; returns "UNKNOWN" if value is not in enum_obj.
 ## Example: enum_to_string(State, State.IDLE) -> "IDLE"; enum_to_string(State, 99) -> "UNKNOWN"
 static func enum_to_string(enum_obj: Dictionary, value: int) -> String:

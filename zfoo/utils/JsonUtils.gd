@@ -40,7 +40,7 @@ static func object_to_json(obj: Variant) -> String:
 			return str(obj)
 		TYPE_STRING:
 			# Must escape control chars / quotes; raw concatenation breaks JSON APIs.
-			return JSON.stringify(obj as String)
+			return quote_json_string(obj as String)
 		TYPE_ARRAY:
 			var builder := StringBuilder.new()
 			for element in obj:
@@ -64,6 +64,39 @@ static func object_to_json(obj: Variant) -> String:
 			Log.error("unknow type:[{}]", type)
 	return ""
 
+
+## JSON string literal. Godot [method JSON.stringify] / [method String.json_escape] leave raw C0
+## controls (ESC, …) and emit non-standard `\v`; strict JSON / OpenAI APIs need `\u00xx`.
+static func quote_json_string(text: String) -> String:
+	var quoted := JSON.stringify(text)
+	var needs_fix := false
+	var i := 0
+	while i < quoted.length():
+		var code := quoted.unicode_at(i)
+		if code < 0x20:
+			needs_fix = true
+			break
+		# json_escape() turns VT into `\v`, which JSON.parse rejects (not in RFC 8259).
+		if code == 0x5C and i + 1 < quoted.length() and quoted.unicode_at(i + 1) == 0x76:
+			needs_fix = true
+			break
+		i += 1
+	if not needs_fix:
+		return quoted
+	var builder := StringBuilder.new()
+	i = 0
+	while i < quoted.length():
+		var code := quoted.unicode_at(i)
+		if code == 0x5C and i + 1 < quoted.length() and quoted.unicode_at(i + 1) == 0x76:
+			builder.append("\\u000b")
+			i += 2
+			continue
+		if code < 0x20:
+			builder.append("\\u%04x" % code)
+		else:
+			builder.append(char(code))
+		i += 1
+	return builder.build_string()
 
 
 static func convert_json_value(property: Dictionary, value: Variant, obj: Object) -> Variant:

@@ -57,3 +57,21 @@ func truncate_test() -> void:
 	assert(StringUtils.truncate("abcdef", 2) == "ab")
 	assert(StringUtils.truncate("", 5) == StringUtils.EMPTY)
 	pass
+
+func truncate_lines_test() -> void:
+	assert(StringUtils.truncate_lines("a\nb\nc", 2) == "a\nb")
+	assert(StringUtils.truncate_lines("a\nb", 3) == "a\nb")
+	assert(StringUtils.truncate_lines("a\nb\nc", 0) == StringUtils.EMPTY)
+	assert(StringUtils.truncate_lines("", 5) == StringUtils.EMPTY)
+	assert(StringUtils.truncate_lines("single line", 28) == "single line")
+	assert(StringUtils.truncate_lines("a\nb\n", 2) == "a\nb")
+	pass
+
+func last_lines_test() -> void:
+	assert(StringUtils.last_lines("a\nb\nc", 2) == "b\nc")
+	assert(StringUtils.last_lines("a\nb", 3) == "a\nb")
+	assert(StringUtils.last_lines("a\nb\nc", 0) == StringUtils.EMPTY)
+	assert(StringUtils.last_lines("", 5) == StringUtils.EMPTY)
+	assert(StringUtils.last_lines("single line", 6) == "single line")
+	assert(StringUtils.last_lines("a\nb\nc\nd\ne\nf\ng", 6) == "b\nc\nd\ne\nf\ng")
+	pass

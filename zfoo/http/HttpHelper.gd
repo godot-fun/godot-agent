@@ -10,8 +10,7 @@ static func async_get(url: String, timeout_millis: int = AsyncHttp.DEFAULT_TIMEO
 	return await http.async_request(HTTPClient.METHOD_GET, url, "", PackedStringArray(), timeout_millis, proxy)
 
 static func async_post(url: String, json: String, extra_headers: PackedStringArray = PackedStringArray(), timeout_millis: int = AsyncHttp.DEFAULT_TIMEOUT_MILLIS, proxy: String = "", on_body_chunk: Callable = Callable()) -> HttpResponse:
-	var headers := PackedStringArray()
-	if not HttpUtils.has_header(extra_headers, "Content-Type"):
-		headers.append("Content-Type: application/json")
-	headers.append_array(extra_headers)
+	var headers := extra_headers.duplicate()
+	if not HttpUtils.has_header(headers, "Content-Type"):
+		headers.insert(0, "Content-Type: application/json")
 	return await http.async_request(HTTPClient.METHOD_POST, url, json, headers, timeout_millis, proxy, on_body_chunk)

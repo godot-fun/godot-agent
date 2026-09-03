@@ -23,11 +23,14 @@ func on_chat_pressed() -> void:
 
 
 func on_chat_stream_pressed() -> void:
-	var text := await OpenAiClient.async_chat_stream(PROMPT, "", func(delta: String) -> void:
-		Log.info("OpenAI delta:[{}]", delta)
+	var completion := await OpenAiClient.async_chat_messages_stream(
+		OpenAiClient.build_messages(PROMPT),
+		[],
+		func(delta: String) -> void:
+			Log.info("OpenAI delta:[{}]", delta)
 	)
-	if StringUtils.is_blank(text):
+	if completion.has_error() or StringUtils.is_blank(completion.content):
 		Log.error("OpenAI stream returned empty text")
 		return
-	Log.info("OpenAI stream reply:[{}]", text)
+	Log.info("OpenAI stream reply:[{}]", completion.content)
 	pass

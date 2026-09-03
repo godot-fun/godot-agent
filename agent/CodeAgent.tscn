@@ -1,0 +1,219 @@
+[gd_scene format=3 uid="uid://dmyulwuwu1hd5"]
+
+[ext_resource type="Script" uid="uid://dwsh1esychpp5" path="res://agent/CodeAgent.gd" id="1_fwn8y"]
+
+[node name="CodeAgent" type="Control" unique_id=1107421514]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_fwn8y")
+
+[node name="Root" type="VBoxContainer" parent="." unique_id=135304536]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 0
+
+[node name="Toolbar" type="PanelContainer" parent="Root" unique_id=917637901]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+
+[node name="ToolbarRow" type="HBoxContainer" parent="Root/Toolbar" unique_id=451628449]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="Root/Toolbar/ToolbarRow" unique_id=1903907348]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Code Agent Workspace"
+
+[node name="ProjectButton" type="Button" parent="Root/Toolbar/ToolbarRow" unique_id=1917564757]
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+mouse_default_cursor_shape = 2
+text = "project"
+flat = true
+
+[node name="MarkdownToggleWrap" type="MarginContainer" parent="Root/Toolbar/ToolbarRow"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_constants/margin_right = 8
+
+[node name="MarkdownToggleButton" type="Button" parent="Root/Toolbar/ToolbarRow/MarkdownToggleWrap"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+focus_mode = 0
+toggle_mode = true
+mouse_default_cursor_shape = 2
+text = "MD"
+
+[node name="LogButtonWrap" type="MarginContainer" parent="Root/Toolbar/ToolbarRow"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_constants/margin_right = 8
+
+[node name="LogButton" type="Button" parent="Root/Toolbar/ToolbarRow/LogButtonWrap"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+text = "Log"
+
+[node name="ThemeToggleWrap" type="MarginContainer" parent="Root/Toolbar/ToolbarRow" unique_id=753340597]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_constants/margin_right = 12
+
+[node name="ThemeToggleButton" type="Button" parent="Root/Toolbar/ToolbarRow/ThemeToggleWrap" unique_id=1504746610]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+focus_mode = 0
+mouse_default_cursor_shape = 2
+
+[node name="Body" type="HSplitContainer" parent="Root" unique_id=786630484]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 0
+split_offsets = PackedInt32Array(280)
+split_offset = 280
+dragger_visibility = 2
+
+[node name="Sidebar" type="PanelContainer" parent="Root/Body" unique_id=230992860]
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+
+[node name="SidebarVBox" type="VBoxContainer" parent="Root/Body/Sidebar" unique_id=1918749569]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SidebarTitle" type="Label" parent="Root/Body/Sidebar/SidebarVBox" unique_id=435690197]
+layout_mode = 2
+text = "Sessions"
+
+[node name="NewSessionButton" type="Button" parent="Root/Body/Sidebar/SidebarVBox" unique_id=317863370]
+layout_mode = 2
+text = "+ New chat"
+
+[node name="SessionListScroll" type="ScrollContainer" parent="Root/Body/Sidebar/SidebarVBox" unique_id=204891054]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SessionList" type="VBoxContainer" parent="Root/Body/Sidebar/SidebarVBox/SessionListScroll" unique_id=484965737]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="ChatArea" type="Panel" parent="Root/Body" unique_id=1494575390]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+
+[node name="ChatScroll" type="ScrollContainer" parent="Root/Body/ChatArea" unique_id=639340883]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+follow_focus = true
+
+[node name="ChatMargin" type="MarginContainer" parent="Root/Body/ChatArea/ChatScroll" unique_id=1922989924]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 8
+
+[node name="InputBar" type="Control" parent="Root/Body/ChatArea" unique_id=1488732845]
+z_index = 2
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -116.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="InputWrap" type="PanelContainer" parent="Root/Body/ChatArea/InputBar" unique_id=25667936]
+layout_mode = 1
+offset_left = -100.0
+offset_top = -68.0
+offset_right = -48.0
+offset_bottom = -16.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="InputInner" type="Control" parent="Root/Body/ChatArea/InputBar/InputWrap" unique_id=725023902]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="InputField" type="TextEdit" parent="Root/Body/ChatArea/InputBar/InputWrap/InputInner" unique_id=1607672378]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+placeholder_text = "Ask Code Agent to read, edit, or run commands…  (Enter to send, Shift+Enter for newline)"
+wrap_mode = 1
+
+[node name="SendButton" type="Button" parent="Root/Body/ChatArea/InputBar/InputWrap/InputInner" unique_id=1056416949]
+z_index = 1
+custom_minimum_size = Vector2(36, 36)
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -44.0
+offset_top = -44.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 0
+grow_vertical = 0
+focus_mode = 0
+
+[node name="WorkspaceDialog" type="FileDialog" parent="." unique_id=1482164299]
+title = "Open a Directory"
+size = Vector2i(900, 600)
+ok_button_text = "Select"
+file_mode = 2
+access = 2
+
+[node name="LogWindow" type="Window" parent="."]
+title = "System Log"
+initial_position = 2
+size = Vector2i(1400, 900)
+visible = false
+transient = true
+min_size = Vector2i(960, 540)
+
+[node name="LogOutput" type="TextEdit" parent="LogWindow"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+editable = false
+wrap_mode = 1

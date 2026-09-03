@@ -54,6 +54,7 @@ func _ready() -> void:
 	WorkflowEvents.events.pipeline_stopped.connect(on_pipeline_stopped)
 
 	log_window.close_requested.connect(on_log_window_close_requested)
+	log_window.window_input.connect(on_log_window_key_input)
 
 	SchedulerBus.schedule_at_fixed_rate(refresh_log_panel, 2000, "skills_workflow_log_refresh")
 
@@ -284,6 +285,17 @@ func on_log_pressed() -> void:
 
 func on_log_window_close_requested() -> void:
 	log_window.hide()
+	pass
+
+
+func on_log_window_key_input(event: InputEvent) -> void:
+	if not log_window.visible:
+		return
+	if event is InputEventKey:
+		var key := event as InputEventKey
+		if key.pressed and not key.echo and key.keycode == KEY_ESCAPE:
+			on_log_window_close_requested()
+			log_window.set_input_as_handled()
 	pass
 
 

@@ -1,3 +1,4 @@
+
 func StringBuilder_append_test() -> void:
 	var builder := StringBuilder.new()
 	builder.append("Hel").append("lo")

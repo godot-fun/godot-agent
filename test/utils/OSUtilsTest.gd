@@ -3,6 +3,11 @@ static func OSUtils_is_windows_test() -> void:
 	pass
 
 
+static func OSUtils_godot_version_test() -> void:
+	assert(StringUtils.is_not_blank(OSUtils.godot_version()))
+	pass
+
+
 static func OSUtils_empty_argv_test() -> void:
 	OSUtils.stop_all()
 	var result := await OSUtils.async_execute(PackedStringArray(), false)
@@ -26,6 +31,28 @@ static func OSUtils_echo_test() -> void:
 	var result := await OSUtils.async_execute(echo_argv("OSUtilsTestHello"), false)
 	assert(result.exit_code == 0)
 	assert(result.output.build_string().contains("OSUtilsTestHello"))
+	assert(OSUtils.process_pids.is_empty())
+	pass
+
+
+static func OSUtils_chinese_async_output_test() -> void:
+	OSUtils.stop_all()
+	var result := await OSUtils.async_execute(chinese_echo_argv(), false)
+	assert(result.exit_code == 0)
+	var output := result.output.build_string()
+	assert(output.contains("OSUtils中文测试"))
+	assert(not output.contains("\uFFFD"))
+	assert(OSUtils.process_pids.is_empty())
+	pass
+
+
+static func OSUtils_chinese_sync_output_test() -> void:
+	OSUtils.stop_all()
+	var result := OSUtils.execute(chinese_echo_argv(), false)
+	assert(result.exit_code == 0)
+	var output := result.output.build_string()
+	assert(output.contains("OSUtils中文测试"))
+	assert(not output.contains("\uFFFD"))
 	assert(OSUtils.process_pids.is_empty())
 	pass
 
@@ -94,6 +121,12 @@ static func OSUtils_stop_all_test() -> void:
 	assert(OSUtils.process_pids.is_empty())
 	await ThreadUtils.async_sleep(500)
 	pass
+
+
+static func chinese_echo_argv() -> PackedStringArray:
+	if OSUtils.is_windows():
+		return PackedStringArray(["cmd", "/c", "echo OSUtils中文测试"])
+	return PackedStringArray(["sh", "-c", "printf '%s\\n' 'OSUtils中文测试'"])
 
 
 static func command_not_found_argv() -> PackedStringArray:

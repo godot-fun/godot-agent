@@ -35,6 +35,23 @@ class Student:
 pass
 
 
+func json_escapes_control_characters_test() -> void:
+	# Godot String cannot hold U+0000: char(0) logs "Unexpected NUL character" and becomes U+FFFD.
+	# Valid char() range excludes 0x0000; test ESC + VT only, plus round-trip behavior.
+	var content := "ansi" + char(0x1B) + "[0m" + "x" + char(0x0B) + "vt"
+	var json := JsonUtils.object_to_json(content)
+	assert(JSON.parse_string(json) == content)
+	assert(json.contains("\\u001b"))
+	assert(json.contains("\\u000b"))
+	assert(not json.contains(char(0x1B)))
+	assert(not json.contains(char(0x0B)))
+	var wrapped := JsonUtils.object_to_json({"role": "tool", "content": content})
+	var parsed: Dictionary = JSON.parse_string(wrapped)
+	assert(parsed["role"] == "tool")
+	assert(parsed["content"] == content)
+	pass
+
+
 func json_test() -> void:
 	var student := Student.new()
 	student.name = "Peter"

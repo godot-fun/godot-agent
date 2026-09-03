@@ -1,5 +1,6 @@
 # AI
 .dependency/
+.agent/
 
 # Skills
 .cursor/skills/humanizer
