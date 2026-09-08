@@ -8,7 +8,7 @@ extends Object
 ## `#`–`###### Title`     → `[font_size=N]Title[/font_size]`
 ## ` ``` / ~~~ ` fence    → `[table=1][cell border=… bg=…][code]…[/code][/cell][/table]`
 ## `` `code` ``           → `[code]code[/code]`
-## `---` `***` `___`      → centered rule line
+## `---` `***` `___`      → full-width `[hr]` line
 ## `> quote`              → `[indent][color]▎[/color] [color]quote[/color][/indent]`
 ## `-` `*` `+` item       → `• item`  (`- [ ]` / `- [x]` → ☐ / ☑)
 ## `1. item` / `1) item`  → `1. item`
@@ -34,7 +34,6 @@ extends Object
 
 # h1–h6; body uses RichTextLabel default size
 const HEADING_FONT_SIZES: PackedInt32Array = [32, 28, 24, 22, 20, 18]
-const HORIZONTAL_RULE_LINE := "[center]────────────────[/center]"
 
 # Private-use tokens; must not appear in source markdown.
 # ESCAPE_SENTINEL: `[lb]` itself contains `]`, so `[`/`]` cannot be replaced in place.
@@ -44,6 +43,7 @@ const ESCAPE_SENTINEL := "\uE002"
 const NBSP := "\u00A0"
 # RichTextLabel `[cell]` has no border by default; these draw the grid on chat bubbles.
 const TABLE_CELL_BORDER := "#5a5e6a"
+const HORIZONTAL_RULE_LINE := "[hr width=100% height=1 color=" + TABLE_CELL_BORDER + "]"
 const TABLE_HEADER_BG := "#ffffff14"
 const TABLE_CELL_PADDING := "8,4,8,4"
 # Fenced code block: dark fill + border frame.
@@ -106,7 +106,7 @@ static func to_bbcode(markdown: String, code_block_bg: String = StringUtils.EMPT
 			out.append(format_code_fence_bbcode("\n".join(code_lines), fence_bg))
 			continue
 
-		# --- / *** / ___  →  [center]────[/center]
+		# --- / *** / ___  →  [hr width=100% …]
 		if is_horizontal_rule_line(line):
 			out.append(HORIZONTAL_RULE_LINE)
 			i += 1
