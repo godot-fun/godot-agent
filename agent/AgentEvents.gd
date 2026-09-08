@@ -44,7 +44,7 @@ class Events:
 	signal chat_entry_add(session_id: int, entry: ChatEntry)
 	signal chat_entry_update(session_id: int, entry: ChatEntry, stream_kind: String)
 	## Emitted after ChatBubbleFlusher applies a pending batch (every ~100 ms while streaming).
-	signal bubble_rich_text_flushed
+	signal chat_bubble_flushed
 	signal markdown_changed(enabled: bool)
 	signal theme_changed(is_dark: bool)
 	pass

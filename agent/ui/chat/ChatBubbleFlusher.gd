@@ -57,7 +57,7 @@ func flush() -> void:
 		if item.entry == null or item.rich_text == null or not is_instance_valid(item.rich_text):
 			continue
 		refresh_rich_text(item.rich_text, item.entry, true)
-	AgentEvents.events.bubble_rich_text_flushed.emit()
+	gdf.callable_deferred(func() -> void: AgentEvents.events.chat_bubble_flushed.emit())
 	pass
 
 
