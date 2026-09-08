@@ -7,7 +7,6 @@ const TITLE_MAX := 32
 
 var id: int = -1
 var title: String = ""
-var title_customized: bool = false
 var messages: Array[ChatMessage] = []
 var chat_entries: Array[ChatEntry] = []
 ## Active run state; null when idle.
@@ -66,9 +65,8 @@ func is_stop_requested() -> bool:
 # ---------------------------------------------------------------------------
 
 func set_title_from_prompt(prompt: String) -> void:
-	if title_customized:
+	if has_chat_history():
 		return
-	title_customized = true
 	title = truncate_title(prompt)
 	AgentEvents.events.session_title_changed.emit(id, title)
 	pass
