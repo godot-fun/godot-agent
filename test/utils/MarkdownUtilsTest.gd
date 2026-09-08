@@ -78,7 +78,7 @@ func code_fence_blank_lines_test() -> void:
 	var bbcode := MarkdownUtils.to_bbcode("```\nline1\n\nline2\n```")
 	assert("[table=1]" in bbcode)
 	assert("[/table]" in bbcode)
-	assert("[cell shrink=false expand=1 border=" in bbcode)
+	assert("[cell shrink=false expand=1 bg=" in bbcode)
 	assert("bg=" in bbcode)
 	assert("[code]" in bbcode)
 	assert("line1" in bbcode and "line2" in bbcode)

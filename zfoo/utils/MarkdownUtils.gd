@@ -6,7 +6,7 @@ extends Object
 ## Syntax map
 ## ----------
 ## `#`–`###### Title`     → `[font_size=N]Title[/font_size]`
-## ` ``` / ~~~ ` fence    → `[table=1][cell border=… bg=…][code]…[/code][/cell][/table]`
+## ` ``` / ~~~ ` fence    → `[table=1][cell bg=…][code]…[/code][/cell][/table]`
 ## `` `code` ``           → `[code]code[/code]`
 ## `---` `***` `___`      → full-width `[hr]` line
 ## `> quote`              → `[indent][color]▎[/color] [color]quote[/color][/indent]`
@@ -46,9 +46,8 @@ const TABLE_CELL_BORDER := "#5a5e6a"
 const HORIZONTAL_RULE_LINE := "[hr width=100% height=1 color=" + TABLE_CELL_BORDER + "]"
 const TABLE_HEADER_BG := "#ffffff14"
 const TABLE_CELL_PADDING := "8,4,8,4"
-# Fenced code block: dark fill + border frame.
+# Fenced code block: dark fill, no outer border.
 const CODE_BLOCK_BG := "#121418"
-const CODE_BLOCK_BORDER := "#5a5e6a"
 const CODE_BLOCK_PADDING := "6,6,6,6"
 const BLOCKQUOTE_BAR := "#59a5f2"
 const BLOCKQUOTE_TEXT := "#8c919e"
@@ -585,11 +584,10 @@ static func parse_link_destination(raw: String) -> String:
 	return dest.substr(0, cut).strip_edges()
 
 
-## Fenced block → one full-width `[cell]` with background + border.
+## Fenced block → one full-width `[cell]` with background only.
 static func format_code_fence_bbcode(code: String, bg: String = CODE_BLOCK_BG) -> String:
 	return StringUtils.format(
-			"[table=1][cell shrink=false expand=1 border={} bg={} padding={}]{}[/cell][/table]",
-			CODE_BLOCK_BORDER,
+			"[table=1][cell shrink=false expand=1 bg={} padding={}]{}[/cell][/table]",
 			bg,
 			CODE_BLOCK_PADDING,
 			wrap_code(code)
