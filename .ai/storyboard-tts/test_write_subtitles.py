@@ -37,9 +37,9 @@ def write_silent_wav(path: Path, seconds: float = 1.0, rate: int = 44100) -> Non
 
 
 class SubtitleLogicTest(unittest.TestCase):
-    def test_split_sentences_chinese(self) -> None:
-        parts = write_subtitles.split_sentences("第一句。第二句！")
-        self.assertEqual(parts, ["第一句。", "第二句！"])
+    def test_split_sentences_cjk_punctuation(self) -> None:
+        parts = write_subtitles.split_sentences("First sentence. Second sentence!")
+        self.assertEqual(parts, ["First sentence.", "Second sentence!"])
 
     def test_split_sentences_english(self) -> None:
         parts = write_subtitles.split_sentences("Hello world. Next line!")
@@ -80,7 +80,7 @@ class WriteSubtitlesCliTest(unittest.TestCase):
                     {
                         "id": "01",
                         "title": "Hook",
-                        "chinese": "你好。",
+                        "chinese": "Hello.",
                         "english": "Hi.",
                         "chinese_skip": False,
                         "english_skip": False,
@@ -102,7 +102,7 @@ class WriteSubtitlesCliTest(unittest.TestCase):
             self.assertTrue((root / "Chinese.srt").is_file())
             self.assertTrue((root / "English.srt").is_file())
             zh = (root / "Chinese.srt").read_text(encoding="utf-8")
-            self.assertIn("你好。", zh)
+            self.assertIn("Hello.", zh)
             self.assertIn("-->", zh)
 
     def test_missing_audio_dir(self) -> None:

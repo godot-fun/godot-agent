@@ -28,7 +28,7 @@ SAMPLE_STORYBOARD = """\
 # Storyboard — Demo Title
 
 ### Shot 01 — Hook
-- **Chinese:** 你好世界。
+- **Chinese:** Greetings to the world.
 - **English:** Hello world.
 - **Duration:** 3s
 
@@ -45,7 +45,7 @@ class ParseLogicTest(unittest.TestCase):
         self.assertEqual(data["title"], "Demo Title")
         self.assertEqual(data["shot_count"], 2)
         self.assertEqual(data["shots"][0]["id"], "01")
-        self.assertEqual(data["shots"][0]["chinese"], "你好世界。")
+        self.assertEqual(data["shots"][0]["chinese"], "Greetings to the world.")
         self.assertFalse(data["shots"][0]["chinese_skip"])
         self.assertEqual(data["shots"][1]["english"], "Second line here! And a third.")
         self.assertTrue(data["shots"][1]["chinese_skip"])

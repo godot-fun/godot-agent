@@ -4,8 +4,8 @@ description: >-
   Merges multiple videos from a folder (sorted by filename) into one clip with a
   random xfade transition (0.5s) between each pair; freeze-pads so total duration
   equals the sum of sources. Exports 3840×2160 60fps H.265 Main10 40Mbps + AAC
-  320kbps. Use when the user wants video merge, concatenate videos, 视频拼接,
-  过场动画, xfade, join clips, or batch stitch clips with transitions.
+  320kbps. Use when the user wants video merge, concatenate videos, video concat,
+  transition animation, xfade, join clips, or batch stitch clips with transitions.
 disable-model-invocation: true
 ---
 

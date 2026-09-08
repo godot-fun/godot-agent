@@ -6,8 +6,8 @@ description: >-
   WAVs under Chinese/ and English/ named by shot id (model loaded once), pads
   0.4 s edge silence in place, then a speech-timeline.md and one concatenated
   SRT per language (Chinese.srt / English.srt). Use when the user wants
-  storyboard TTS, 分镜转语音, 旁白配音, storyboard-to-speech, bilingual VO export,
-  subtitles, 字幕, or batch TTS from a storyboard.md.
+  storyboard TTS, storyboard to speech, narration VO, storyboard-to-speech, bilingual VO export,
+  subtitles, or batch TTS from a storyboard.md.
 ---
 
 # Storyboard TTS
@@ -24,7 +24,7 @@ Take a **[storyboard](../storyboard/SKILL.md)** deliverable and batch-synthesize
 
 Shot id from headers (`### Shot 01 — …` → `01.wav`).
 
-Subtitles: **one SRT per language**. Shots are laid end-to-end on the VO timeline (shot N starts when N−1 ends). Inside a shot, text is split on sentence punctuation (`。！？；…` / `.!?`) into multiple cues; cue lengths share that shot’s WAV duration by **non-whitespace character weight**. Skip `(no VO)` / missing audio.
+Subtitles: **one SRT per language**. Shots are laid end-to-end on the VO timeline (shot N starts when N−1 ends). Inside a shot, text is split on sentence punctuation (`.!?;…` and CJK equivalents) into multiple cues; cue lengths share that shot’s WAV duration by **non-whitespace character weight**. Skip `(no VO)` / missing audio.
 
 ## Rules
 
@@ -36,7 +36,7 @@ When this skill applies, read and follow [skill-dependency-manager](../skill-dep
 4. Never overwrite the storyboard source. Write only under `<audio-dir>/`.
 5. Skip `(no VO)` / empty lines — no empty WAVs or empty subtitle cues.
 6. Confirm **voice reference** (and output dir if unclear) before a full batch.
-7. 第一层目录使用音频的名字作为第一层目录的名字。子目录的名字都是不变. Default `<audio-dir>` is `<storyboard-dir>/<voice-stem>/`. Do **not** use `<storyboard-stem>-speech`.
+7. The top-level output directory uses the reference voice filename stem. Subdirectory names stay fixed. Default `<audio-dir>` is `<storyboard-dir>/<voice-stem>/`. Do **not** use `<storyboard-stem>-speech`.
 
 ## Inputs
 
@@ -59,7 +59,7 @@ When this skill applies, read and follow [skill-dependency-manager](../skill-dep
 ## Layout
 
 ```
-<storyboard-dir>/<voice-stem>/   # e.g. 哪吒-自己-快/ from 哪吒-自己-快.wav
+<storyboard-dir>/<voice-stem>/   # e.g. narrator-self-fast/ from narrator-self-fast.wav
   Chinese/
     01.wav
     …

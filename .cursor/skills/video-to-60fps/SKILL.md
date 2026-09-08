@@ -4,7 +4,7 @@ description: >-
   Interpolates a single video to 60fps with Video2X RIFE at source resolution.
   Already ~60fps files are skipped (nothing is written). Below 60fps uses RIFE,
   not FFmpeg frame duplication. Above 60fps drops to 60 with FFmpeg. Use when the
-  user wants video-to-60fps, 插帧, frame interpolation, RIFE, 24 to 60, 30 to 60,
+  user wants video-to-60fps, frame interpolation, RIFE, 24 to 60, 30 to 60,
   or convert fps to 60 before video-to-4k.
 disable-model-invocation: true
 ---

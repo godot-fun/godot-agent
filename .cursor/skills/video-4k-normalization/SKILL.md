@@ -5,7 +5,7 @@ description: >-
   + AAC 320kbps BT.709 SDR MP4 4K master (FFmpeg re-encode, HDR tone-mapped).
   Use before hard-cut merge when 4K (or near-4K) clips differ in color space,
   HDR/SDR, fps, or size. Triggers: video-4k-normalization, 4K normalization,
-  视频归一化, media conform, unify encode, color conform, tone map HDR, prepare
+  video normalization, media conform, unify encode, color conform, tone map HDR, prepare
   for video-merge, mixed HDR/SDR.
 disable-model-invocation: true
 ---

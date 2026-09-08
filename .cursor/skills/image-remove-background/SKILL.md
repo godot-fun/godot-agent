@@ -2,7 +2,7 @@
 name: image-remove-background
 description: >-
   Removes image backgrounds and exports transparent PNGs using rembg (U2Net / BiRefNet).
-  Use when the user wants background removal, matting, cutout, 抠图, transparent sprites,
+  Use when the user wants background removal, matting, cutout, background cutout, transparent sprites,
   alpha PNG export, or remove background from a game/UI asset.
 ---
 

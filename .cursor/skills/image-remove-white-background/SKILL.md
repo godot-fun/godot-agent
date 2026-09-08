@@ -4,7 +4,7 @@ description: >-
   Removes solid-color backgrounds (white, green #00FF00, magenta #FF00FF) from
   a single AI-generated image using color key and border flood fill — not AI matting.
   Use when rembg over-removes foreground, for flat white/green/magenta backgrounds,
-  color key cutout, 白底抠图, 绿幕, or chroma key before Godot sprite import.
+  color key cutout, white-background cutout, green screen, or chroma key before Godot sprite import.
 ---
 
 # Image Remove White / Chroma Background

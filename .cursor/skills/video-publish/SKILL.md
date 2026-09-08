@@ -5,8 +5,8 @@ description: >-
   article, Reddit English post, 3 landscape + 3 portrait Google image-gen cover
   prompts, and title/description/tags for Bilibili, Douyin, Xiaohongshu, Weibo,
   YouTube, X, TikTok, Instagram — each in separate files, platform-native and
-  click-worthy. Use when the user wants video-publish, 视频发布, 发布文案, 封面提示词,
-  标题简介标签, Zhihu/Reddit posts, or multi-platform upload copy.
+  click-worthy. Use when the user wants video-publish, video publishing, publish copy, cover prompts,
+  title/description/tags, Zhihu/Reddit posts, or multi-platform upload copy.
 ---
 
 # Video Publish
@@ -71,7 +71,7 @@ Eye-catching first; still native to each platform — not the same paragraph pas
 Both articles must be **substantive**, not teaser blurbs. Expand from the user’s materials: explain context, walk through key beats, add concrete detail, and give readers something useful even if they never open the video.
 
 **Depth (required)**
-- Zhihu: typically **1500–3500 字** (or more if materials are dense); multiple `##` sections
+- Zhihu: typically **1500–3500 Chinese characters** (or more if materials are dense); multiple `##` sections
 - Reddit: typically **600–1500 words**; clear sections, still conversational
 - Prefer “too much useful detail” over thin summary; do not pad with empty hype
 - Structure idea: hook → background / problem → what we built or showed → how it works → takeaways → soft CTA
@@ -85,7 +85,7 @@ Both articles must be **substantive**, not teaser blurbs. Expand from the user�
 - If materials only mention code indirectly (e.g. storyboard about a feature), open related project files when a clear path/repo is in scope and quote **their** implementations
 - No code in materials and none findable → skip code sections; do not fabricate demos
 
-**知乎 (`zhihu.md`)** — Chinese, normal Markdown article
+**Zhihu (`zhihu.md`)** — Chinese, normal Markdown article
 - `#` title as H1; body with `##` / `###` subheads, lists, and code fences as needed
 - Long-form, structured, credible; strong hook title + opening question/conflict
 - Fill sections with explanation, comparisons, pitfalls, and material-grounded examples
@@ -143,10 +143,10 @@ Generate **all eight**. Each section: Title, Description, Tags — each in its o
 
 | Platform | Language | Style notes |
 |----------|----------|-------------|
-| Bilibili | 中文 | Searchable title; description with highlights / chapters if known |
-| Douyin | 中文 | Ultra-short hook title; first desc line = scroll-stopper |
-| Xiaohongshu | 中文 | Title + emoji OK; lifestyle/note tone |
-| Weibo | 中文 | Short punchy; @/话题 friendly; desc can double as post body |
+| Bilibili | Chinese | Searchable title; description with highlights / chapters if known |
+| Douyin | Chinese | Ultra-short hook title; first desc line = scroll-stopper |
+| Xiaohongshu | Chinese | Title + emoji OK; lifestyle/note tone |
+| Weibo | Chinese | Short punchy; @/topic friendly; desc can double as post body |
 | YouTube | English | SEO title (~≤100 chars ideal); description with hook + value + CTA |
 | X | English | Punchy post-length energy; desc ≈ post text if needed |
 | TikTok | English | Caption-first hook; keep title/caption tight |
@@ -158,14 +158,14 @@ Do **not** use one universal tag format. The Tags fence must match how that plat
 
 | Platform | Format inside Tags fence | Count / notes |
 |----------|--------------------------|---------------|
-| **Bilibili** | Plain keywords, **comma-separated**, **no `#`** (投稿标签栏) | ~8–12；中文为主；含分区向词 + 内容专有词；勿堆无关热词 |
-| **Douyin** | `#话题` space-separated，**有 `#`、无结尾 `#`** | ~5–8；可混 1–2 个较热话题 + 精准词；勿刷屏式 # |
-| **Xiaohongshu** | `#话题` space-separated，**有 `#`、无结尾 `#`** | ~8–15；笔记发现流常用；生活/教程向词优先 |
-| **Weibo** | `#话题#` space-separated（**开闭都有 `#`**） | ~3–6；偏短、可上热搜向；勿超长句当话题 |
-| **YouTube** | Comma-separated SEO phrases，**no `#`** (YouTube Studio tags field) | ~8–15；可含 2–4 词短语；英/专有名保留原样 |
-| **X** | `#Hashtag` space-separated，**有 `#`** | **2–4 only**；克制；CamelCase 或短词；禁止一串标签墙 |
-| **TikTok** | `#hashtag` space-separated，**有 `#`** | ~4–8；1–2 broad + rest niche；少用空洞 #fyp 堆砌（最多 1 个，可不用） |
-| **Instagram** | `#hashtag` space-separated，**有 `#`** | ~8–15；可放 Tags 栏供粘贴到文末/首评；混 broad + specific |
+| **Bilibili** | Plain keywords, **comma-separated**, **no `#`** (upload tags field) | ~8–12; mostly Chinese; mix category terms + content-specific terms; avoid unrelated hot keywords |
+| **Douyin** | `#topic` space-separated, **leading `#` only, no trailing `#`** | ~5–8; mix 1–2 trending topics + precise terms; avoid spammy `#` walls |
+| **Xiaohongshu** | `#topic` space-separated, **leading `#` only, no trailing `#`** | ~8–15; common in note discovery; lifestyle/tutorial terms first |
+| **Weibo** | `#topic#` space-separated (**opening and closing `#`**) | ~3–6; keep short; trending-friendly; do not use long sentences as topics |
+| **YouTube** | Comma-separated SEO phrases, **no `#`** (YouTube Studio tags field) | ~8–15; may include 2–4 word phrases; keep English/proper nouns as-is |
+| **X** | `#Hashtag` space-separated, **with `#`** | **2–4 only**; stay restrained; CamelCase or short words; no hashtag walls |
+| **TikTok** | `#hashtag` space-separated, **with `#`** | ~4–8; 1–2 broad + rest niche; avoid empty #fyp spam (max 1, optional) |
+| **Instagram** | `#hashtag` space-separated, **with `#`** | ~8–15; paste into Tags or first comment; mix broad + specific |
 
 Shared tag quality:
 - Relevant to the video; mix discoverable + specific
@@ -194,7 +194,7 @@ Shared tag quality:
 ### Tags
 
 ```
-Godot, GDScript, 游戏开发, …
+Godot, GDScript, game development, …
 ```
 
 ## Douyin
@@ -202,7 +202,7 @@ Godot, GDScript, 游戏开发, …
 ### Tags
 
 ```
-#Godot #游戏开发 #独立游戏 …
+#Godot #GameDev #IndieGame …
 ```
 
 ## Xiaohongshu
@@ -210,7 +210,7 @@ Godot, GDScript, 游戏开发, …
 ### Tags
 
 ```
-#Godot #游戏开发 #独立游戏
+#Godot #GameDev #IndieGame
 ```
 
 ## Weibo
@@ -218,7 +218,7 @@ Godot, GDScript, 游戏开发, …
 ### Tags
 
 ```
-#Godot# #独立游戏#
+#Godot# #IndieGame#
 ```
 
 ## YouTube
@@ -269,7 +269,7 @@ Use exact section headings `## Bilibili` … `## Instagram` (stable for copy-pas
 
 ## Examples
 
-**Input:** `res://…` storyboard + “发布这期视频”  
+**Input:** `res://…` storyboard + “publish this video”  
 **Output dir:** storyboard file’s folder → write the 5 files there.
 
 **Input:** paste brief only, no path  

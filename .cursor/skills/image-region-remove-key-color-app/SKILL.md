@@ -3,7 +3,7 @@ name: image-region-remove-key-color-app
 description: >-
   Interactive Gradio UI to paint a region and remove solid key-color background
   (white / green / magenta) only inside that selection. Use when enclosed white
-  islands remain after border/both keying, for localized 白底抠图, paint-to-erase
+  islands remain after border/both keying, for localized white-background cutout, paint-to-erase
   chroma patches, or selective color-key cleanup before Godot sprite import.
 ---
 

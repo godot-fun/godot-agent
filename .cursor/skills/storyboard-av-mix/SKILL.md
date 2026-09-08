@@ -4,7 +4,7 @@ description: >-
   Muxes per-shot storyboard video with Chinese and English voice-over by retiming
   video to match VO duration (setpts), writing Video-Chinese/ and Video-English/
   (matched by shot id 01, 02, …). Use when the user wants storyboard A/V mix,
-  分镜音视频合成, 配音合成, video retime to audio, Video-Chinese, Video-English,
+  storyboard A/V mix, VO dubbing mix, video retime to audio, Video-Chinese, Video-English,
   bilingual VO on cut video, or batch mux Video/ + Chinese/ + English/.
 ---
 

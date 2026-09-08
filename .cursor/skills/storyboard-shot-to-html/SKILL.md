@@ -2,17 +2,17 @@
 name: storyboard-shot-to-html
 description: >-
   Turns a storyboard shot (video prompt + narration) into a self-contained
-  fullscreen HTML CSS animation for the browser. Analyzes VO/旁白, searches
+  fullscreen HTML CSS animation for the browser. Analyzes VO/narration, searches
   related facts and usage cues, then builds a rich layered stage (camera,
   subject, secondary UI, light, micro-detail) with Fullscreen API and Space-to-play.
   Use when the user wants storyboard-shot-to-html, HTML animation preview,
-  prompt-to-HTML, 分镜转HTML, 提示词动画演示, 旁白可视化, fullscreen preview,
+  prompt-to-HTML, storyboard to HTML, prompt animation demo, narration visualization, fullscreen preview,
   Space to play, or a web demo of a video prompt / shot.
 ---
 
 # Storyboard Shot → HTML
 
-Turn **one shot** (video prompt +旁白) into a **single-file HTML** animation you can open in a browser — a motion sketch of the intended frame, not a real video render.
+Turn **one shot** (video prompt + narration) into a **single-file HTML** animation you can open in a browser — a motion sketch of the intended frame, not a real video render.
 
 Companion to **[storyboard](../storyboard/SKILL.md)**. Does **not** call video/image generation APIs.
 
@@ -24,7 +24,7 @@ Accept any of:
 |-------|------------|
 | Storyboard `.md` + shot id (`01`, `Shot 02`, …) | Parse that shot’s `Video prompt`, `Chinese` / `English`, `Visual`, `Camera`, `Duration`, Visual Style |
 | Pasted shot block | Same fields if present |
-| Raw video prompt (±旁白) | Prompt = visual source; narration = meaning layer to research |
+| Raw video prompt (± narration) | Prompt = visual source; narration = meaning layer to research |
 
 If multiple shots and no id → ask once, or do **Shot 01** only when the user clearly wants a quick sample.
 
@@ -54,8 +54,8 @@ The preview must play as a **full-viewport cinematic stage**, not a letterboxed 
 | Viewport fill | `html, body { height:100%; overflow:hidden }`; stage covers **100vw × 100vh** |
 | Aspect | Keep storyboard aspect (default **16:9**) with **cover** (crop) or letterbox on black — prefer **cover** so the frame fills the screen |
 | No below-fold chrome | Title, tags, original prompt must **not** sit under the stage in normal flow |
-| Overlay meta | Put prompt / research in a **hidden overlay** (`I` or `?` to toggle; `Esc` closes). **Do not** burn VO/旁白 onto the stage — narration is for analysis only, not on-screen text |
-| **Space to play** | Animations stay **paused** on load (first frame / idle pose). **`Space`** starts playback **once**. Do not autoplay on open. Hint text: `Space to play · Click / F fullscreen · I prompt` (may also mention 空格开始) |
+| Overlay meta | Put prompt / research in a **hidden overlay** (`I` or `?` to toggle; `Esc` closes). **Do not** burn VO/narration onto the stage — narration is for analysis only, not on-screen text |
+| **Space to play** | Animations stay **paused** on load (first frame / idle pose). **`Space`** starts playback **once**. Do not autoplay on open. Hint text: `Space to play · Click / F fullscreen · I prompt` (may also mention Space to start) |
 | **Play once** | Shot timeline is **one-shot** — no `infinite` / `alternate` loop on the main beat. When duration ends, **hold the final frame** (`animation-fill-mode: forwards` or equivalent). Do **not** restart on a second `Space`, and do not auto-replay |
 | Browser Fullscreen API | On click (or `F`), call `element.requestFullscreen()` on the stage root. Show a brief hint until entered (`Click / F fullscreen · Space to play`). `Esc` exits native fullscreen |
 | Open behavior | After writing the file, open it so the user lands on the fullscreen-ready **paused** page; wait for `Space` to play |
@@ -83,7 +83,7 @@ Extract:
 
 Map duration to animation timing when sensible (`~5s` → ~5s **one-shot** timeline, then hold). Playback starts only on **`Space`** (paused until then); never loop or auto-replay.
 
-### 2. Analyze旁白 (required)
+### 2. Analyze narration (required)
 
 From VO, list **concrete concepts** that affect what the viewer should understand:
 
@@ -118,9 +118,9 @@ Goal: **one composition** that reads as the shot at first viewport — animated 
 | Prompt / research in toggle overlay (`I` / `?`) | Fake photoreal video, watermarked stock embeds |
 | Expressive fonts when they serve mood | Default system-only stacks for cinematic shots |
 
-**Sync with VO meaning:** if旁白 teaches a step or names a UI, show that metaphor on stage (even abstractly). Mood-only VO → prioritize prompt cinematography.
+**Sync with VO meaning:** if narration teaches a step or names a UI, show that metaphor on stage (even abstractly). Mood-only VO → prioritize prompt cinematography.
 
-**Language:** **Prefer English** for all on-stage chrome, labels, badges, chat bubbles, code comments, and hint text. Do not default to Chinese even when Chinese VO is present. **Never** put spoken 旁白 / VO lines on the stage. Keep the **original prompt + VO text** (Chinese and English) only in the toggle overlay. Overlay headings and research notes should also be English.
+**Language:** **Prefer English** for all on-stage chrome, labels, badges, chat bubbles, code comments, and hint text. Do not default to Chinese even when Chinese VO is present. **Never** put spoken narration / VO lines on the stage. Keep the **original prompt + VO text** (Chinese and English) only in the toggle overlay. Overlay headings and research notes should also be English.
 
 **Typography / readable stage text (required):**
 
@@ -205,7 +205,7 @@ Use **staggers** (40–120ms steps) for lists, folders, packets, checkmarks. Pre
 - Busy infinite loops that feel like a GIF restart
 - Unreadable micro-text walls or fake brand logos
 - Stage chrome / nodes / badges at ~7–11px (too small for fullscreen; enlarge or drop labels)
-- Burning 旁白 into the frame
+- Burning narration into the frame
 - Default whole-frame `scale` / push-in while code or other critical text is on stage (zooms away readability)
 - Inventing camera moves not present in the shot’s **Camera** line
 
@@ -276,7 +276,7 @@ Only if the user asks for a full board:
 - [ ] **Space to play:** paused on load; `Space` starts once; no autoplay; no on-stage VO text
 - [ ] **Play once:** no loop; end frame held; no auto-replay / Space restart after finish
 - [ ] Stage matches prompt subject, camera energy, and aspect
-- [ ] 旁白 concepts analyzed; factual/usage gaps researched when needed
+- [ ] Narration concepts analyzed; factual/usage gaps researched when needed
 - [ ] **Rich motion:** ≥4 of 5 layers (camera / primary / secondary / light / micro); ≥5 animated properties; ≥3 depth planes
 - [ ] **Readable priority:** important code/content → locked camera or local emphasis; no default whole-frame zoom that shrinks text
 - [ ] **Typography:** on-stage labels use large clamps (primary ≥~14–20px, secondary ≥~13–17px); no critical 7–11px micro-text

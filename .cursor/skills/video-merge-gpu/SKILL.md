@@ -6,7 +6,7 @@ description: >-
   equals the sum of sources. Encodes with GPU HEVC only (NVENC / AMF / QSV — no
   CPU libx265 fallback). Exports 3840×2160 60fps H.265 Main10 40Mbps + AAC
   320kbps. Use when the user wants video-merge-gpu, GPU video merge, NVENC merge,
-  hevc_nvenc concat, GPU 拼接, 视频拼接 GPU, or batch stitch clips with xfade on GPU.
+  hevc_nvenc concat, GPU concat, GPU video merge, or batch stitch clips with xfade on GPU.
 disable-model-invocation: true
 ---
 

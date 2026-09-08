@@ -125,7 +125,7 @@ Source video (Veo / Gemini generated)
 | [video-merge-gpu](video-merge-gpu/SKILL.md) | Same merge, GPU HEVC only (`hevc_nvenc` / `hevc_amf` / `hevc_qsv`; no CPU fallback) |
 | [video-compress-to-size](video-compress-to-size/SKILL.md) | Re-encode under a max file size (GPU VBR preferred; CPU two-pass fallback) |
 | [video-to-ogv](video-to-ogv/SKILL.md) | Video → OGV |
-| [video-publish](video-publish/SKILL.md) | Materials → multi-platform publish pack (知乎 / Reddit / covers / 8 platforms) |
+| [video-publish](video-publish/SKILL.md) | Materials → multi-platform publish pack (Zhihu / Reddit / covers / 8 platforms) |
 
 ## Storyboard
 

@@ -1,6 +1,6 @@
 ---
 name: video-compress-to-size
-description: Compresses a single video file to stay under a user-specified max file size using FFmpeg. Prefers GPU encoders (NVENC / AMF / QSV) with VBR bitrate targeting; falls back to CPU two-pass H.264/HEVC. Use when the user wants to compress video, reduce video file size, shrink MP4/MKV/MOV under N MB, GPU encode, NVENC compress, 压缩视频, 缩小视频体积, or re-encode a clip to a size limit.
+description: Compresses a single video file to stay under a user-specified max file size using FFmpeg. Prefers GPU encoders (NVENC / AMF / QSV) with VBR bitrate targeting; falls back to CPU two-pass H.264/HEVC. Use when the user wants to compress video, reduce video file size, shrink MP4/MKV/MOV under N MB, GPU encode, NVENC compress, or re-encode a clip to a size limit.
 ---
 
 # Video Compress To Size

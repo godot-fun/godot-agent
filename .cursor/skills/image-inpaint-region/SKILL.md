@@ -2,7 +2,7 @@
 name: image-inpaint-region
 description: >-
   Local circular region inpainting with LaMa (IOPaint). Uses IOPaint default
-  InpaintRequest and mask handling. Use for 局部重绘 / 局部修复 / inpaint when
+  InpaintRequest and mask handling. Use for local region inpaint / local region repair / inpaint when
   circle center and radius cx,cy,r are known.
 ---
 

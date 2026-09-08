@@ -12,5 +12,5 @@ Unix: `.dependency/index-tts/.venv/bin/python`
 
 
 ```bash
-.dependency/index-tts/.venv/Scripts/python.exe .ai/ai-text-to-speech/tts.py --voice .ai/test/audio/zhu_ba_jie.wav --text "你好，欢迎来到这个世界。"
+.dependency/index-tts/.venv/Scripts/python.exe .ai/ai-text-to-speech/tts.py --voice .ai/test/audio/zhu_ba_jie.wav --text "Hello, welcome to this world."
 ```
