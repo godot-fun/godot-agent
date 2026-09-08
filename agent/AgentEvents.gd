@@ -43,6 +43,7 @@ class Events:
 	# UI configuration
 	signal chat_entry_add(session_id: int, entry: ChatEntry)
 	signal chat_entry_update(session_id: int, entry: ChatEntry, stream_kind: String)
+	signal bubble_rich_text_flushed
 	signal markdown_changed(enabled: bool)
 	signal theme_changed(is_dark: bool)
 	pass

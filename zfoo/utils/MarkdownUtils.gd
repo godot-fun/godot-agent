@@ -656,15 +656,15 @@ const BODY_LABEL_MIN_HEIGHT := 24
 const TABLE_V_SEPARATION := 0
 
 
-static func create_body_label(text_color: Color, raw_text: String, markdown_enabled: bool, content_width: float = 0.0, code_block_bg: String = StringUtils.EMPTY) -> RichTextLabel:
+static func create_rich_text_label(text_color: Color, raw_text: String, markdown_enabled: bool, content_width: float = 0.0, code_block_bg: String = StringUtils.EMPTY) -> RichTextLabel:
 	var label := RichTextLabel.new()
-	configure_body_label(label, text_color)
+	configure_rich_text_label(label, text_color)
 	label.meta_clicked.connect(handle_meta_clicked)
-	set_body_text(label, raw_text, markdown_enabled, content_width, code_block_bg)
+	set_rich_text_label_text(label, raw_text, markdown_enabled, content_width, code_block_bg)
 	return label
 
 
-static func configure_body_label(label: RichTextLabel, text_color: Color) -> void:
+static func configure_rich_text_label(label: RichTextLabel, text_color: Color) -> void:
 	label.selection_enabled = true
 	label.scroll_active = false
 	label.fit_content = true
@@ -681,11 +681,11 @@ static func configure_body_label(label: RichTextLabel, text_color: Color) -> voi
 	pass
 
 
-static func get_raw_body(label: RichTextLabel) -> String:
+static func get_raw_body_from_rich_text_label(label: RichTextLabel) -> String:
 	return str(label.get_meta(META_RAW_BODY, ""))
 
 
-static func set_body_text(label: RichTextLabel, raw_text: String, markdown_enabled: bool, content_width: float = 0.0, code_block_bg: String = StringUtils.EMPTY) -> void:
+static func set_rich_text_label_text(label: RichTextLabel, raw_text: String, markdown_enabled: bool, content_width: float = 0.0, code_block_bg: String = StringUtils.EMPTY) -> void:
 	label.set_meta(META_RAW_BODY, raw_text)
 	if markdown_enabled:
 		var bbcode := to_bbcode(raw_text, code_block_bg)
@@ -706,7 +706,7 @@ static func set_body_text(label: RichTextLabel, raw_text: String, markdown_enabl
 
 
 static func append_body_text(label: RichTextLabel, delta: String, markdown_enabled: bool, content_width: float = 0.0, code_block_bg: String = StringUtils.EMPTY) -> void:
-	set_body_text(label, get_raw_body(label) + delta, markdown_enabled, content_width, code_block_bg)
+	set_rich_text_label_text(label, get_raw_body_from_rich_text_label(label) + delta, markdown_enabled, content_width, code_block_bg)
 	pass
 
 

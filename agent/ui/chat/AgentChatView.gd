@@ -23,6 +23,7 @@ var chat_host: Control
 
 var chat_list_caches: Dictionary[int, VBoxContainer] = {}
 var session_stream_slots: Dictionary[int, SessionStreamSlots] = {}
+var chat_bubble_flusher: ChatBubbleFlusher = ChatBubbleFlusher.new()
 var stick_to_bottom: bool = true
 
 
@@ -36,6 +37,7 @@ func setup(
 ) -> void:
 	chat_scroll = p_chat_scroll
 	chat_host = p_chat_host
+	chat_bubble_flusher.setup()
 	chat_scroll.gui_input.connect(on_chat_scroll_gui_input)
 	AgentEvents.events.markdown_changed.connect(on_markdown_changed)
 	AgentEvents.events.theme_changed.connect(on_theme_changed)
@@ -46,6 +48,7 @@ func setup(
 	AgentEvents.events.turn_start.connect(on_turn_start)
 	AgentEvents.events.chat_entry_add.connect(on_message_start)
 	AgentEvents.events.chat_entry_update.connect(on_chat_entry_update)
+	AgentEvents.events.bubble_rich_text_flushed.connect(on_bubble_rich_text_flushed)
 	pass
 
 
@@ -61,9 +64,15 @@ func on_session_removed(session_id: int) -> void:
 	pass
 
 
+func on_bubble_rich_text_flushed() -> void:
+	queue_scroll_to_bottom()
+	pass
+
+
 func on_session_stop(session_id: int) -> void:
 	if AgentSessionManager.is_active(session_id):
 		refresh_error_resume_buttons()
+	chat_bubble_flusher.flush_now()
 	session_stream_slots.erase(session_id)
 	var session := AgentSessionManager.get_session(session_id)
 	if session != null:
@@ -107,7 +116,7 @@ func on_markdown_changed(_enabled: bool) -> void:
 			ChatEntry.KIND_ERROR:
 				ErrorBubble.refresh(rich_text, entry)
 			_:
-				refresh_bubble_rich_text(rich_text, entry)
+				ChatBubbleFlusher.refresh_rich_text(rich_text, entry)
 	drop_inactive_lists()
 	pass
 
@@ -253,17 +262,7 @@ func on_chat_entry_update(session_id: int, entry: ChatEntry, channel: String) ->
 			slot.rich_text = append_entry_bubble(entry, session_id)
 		container.slots[channel] = slot
 	elif slot.rich_text != null:
-		refresh_stream_delta(session_id, slot.entry, slot.rich_text, channel)
-	pass
-
-
-func refresh_stream_delta(session_id: int, entry: ChatEntry, rich_text: RichTextLabel, channel: String) -> void:
-	if channel == OpenAiClient.STREAM_KIND_REASONING:
-		ThinkingBubble.on_stream_delta(rich_text, entry)
-	else:
-		refresh_bubble_rich_text(rich_text, entry, true)
-	if AgentSessionManager.is_active(session_id):
-		queue_scroll_to_bottom()
+		chat_bubble_flusher.enqueue(slot.rich_text, slot.entry)
 	pass
 
 
@@ -347,10 +346,10 @@ func append_bubble(chat_list: VBoxContainer, entry: ChatEntry, text_color: Color
 	title_label.add_theme_font_size_override("font_size", 12)
 	vbox.add_child(title_label)
 
-	var rich_text := MarkdownUtils.create_body_label(
+	var rich_text := MarkdownUtils.create_rich_text_label(
 		text_color,
 		entry.body,
-		markdown_enabled_for_entry(entry),
+		MarkdownToggle.markdown_enabled_for_entry(entry),
 		0.0,
 		AgentColors.code_block_bg_html()
 	)
@@ -360,26 +359,6 @@ func append_bubble(chat_list: VBoxContainer, entry: ChatEntry, text_color: Color
 	chat_list.add_child(wrapper)
 	queue_scroll_to_bottom()
 	return rich_text
-
-
-func refresh_bubble_rich_text(rich_text: RichTextLabel, entry: ChatEntry, incremental: bool = false) -> void:
-	var markdown_enabled := markdown_enabled_for_entry(entry)
-	if incremental and not markdown_enabled:
-		var cached := MarkdownUtils.get_raw_body(rich_text)
-		if entry.body.length() > cached.length() and entry.body.begins_with(cached):
-			if rich_text.bbcode_enabled:
-				rich_text.bbcode_enabled = false
-			rich_text.append_text(entry.body.substr(cached.length()))
-			rich_text.set_meta(MarkdownUtils.META_RAW_BODY, entry.body)
-			return
-	MarkdownUtils.set_body_text(rich_text, entry.body, markdown_enabled, 0.0, AgentColors.code_block_bg_html())
-	pass
-
-
-func markdown_enabled_for_entry(entry: ChatEntry) -> bool:
-	if entry.kind == ChatEntry.KIND_TOOL:
-		return false
-	return MarkdownToggle.markdown_enabled
 
 
 func get_bubble_rich_text(session_id: int, entry: ChatEntry) -> RichTextLabel:
