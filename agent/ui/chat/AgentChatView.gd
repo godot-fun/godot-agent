@@ -6,16 +6,15 @@ extends RefCounted
 
 const BUBBLE_BODY_MARGIN_H := 12
 const LIST_SEPARATION := 10
-const STREAM_FLUSH_SEC := 0.1
-const META_BODY_LABEL := "body_label"
+const META_BUBBLE_RICH_TEXT := "bubble_rich_text"
 
 
 class StreamSlot:
 	var entry: ChatEntry = null
-	var label: RichTextLabel = null
+	var rich_text: RichTextLabel = null
 
 
-class SessionStepStreams:
+class SessionStreamSlots:
 	var slots: Dictionary[String, StreamSlot] = {}
 
 
@@ -23,11 +22,8 @@ var chat_scroll: ScrollContainer
 var chat_host: Control
 
 var chat_list_caches: Dictionary[int, VBoxContainer] = {}
-var step_streams: Dictionary[int, SessionStepStreams] = {}
-var entry_labels: Dictionary[ChatEntry, RichTextLabel] = {}
+var session_stream_slots: Dictionary[int, SessionStreamSlots] = {}
 var stick_to_bottom: bool = true
-var stream_flush_scheduled: Dictionary[int, bool] = {}
-var pending_stream_refreshes: Dictionary[int, Dictionary] = {}
 
 
 # ---------------------------------------------------------------------------
@@ -61,15 +57,14 @@ func on_session_selected(session_id: int) -> void:
 
 func on_session_removed(session_id: int) -> void:
 	drop_list(session_id)
-	step_streams.erase(session_id)
+	session_stream_slots.erase(session_id)
 	pass
 
 
 func on_session_stop(session_id: int) -> void:
 	if AgentSessionManager.is_active(session_id):
 		refresh_error_resume_buttons()
-	flush_stream_refreshes(session_id)
-	step_streams.erase(session_id)
+	session_stream_slots.erase(session_id)
 	var session := AgentSessionManager.get_session(session_id)
 	if session != null:
 		sync_new_entries(session)
@@ -77,7 +72,7 @@ func on_session_stop(session_id: int) -> void:
 
 
 func on_turn_start(session_id: int) -> void:
-	step_streams.erase(session_id)
+	session_stream_slots.erase(session_id)
 	pass
 
 
@@ -103,16 +98,16 @@ func on_markdown_changed(_enabled: bool) -> void:
 	if session == null:
 		return
 	for entry: ChatEntry in session.chat_entries:
-		var body_label: RichTextLabel = entry_labels.get(entry)
-		if body_label == null:
+		var rich_text := get_bubble_rich_text(session.id, entry)
+		if rich_text == null:
 			continue
 		match entry.kind:
 			ChatEntry.KIND_THINKING:
-				ThinkingBubble.refresh(body_label, entry)
+				ThinkingBubble.refresh(rich_text, entry)
 			ChatEntry.KIND_ERROR:
-				ErrorBubble.refresh(body_label, entry)
+				ErrorBubble.refresh(rich_text, entry)
 			_:
-				refresh_body_label(body_label, entry)
+				refresh_bubble_rich_text(rich_text, entry)
 	drop_inactive_lists()
 	pass
 
@@ -183,11 +178,11 @@ func rebuild(session_id: int) -> void:
 
 
 func fill_list(session: AgentSession) -> void:
-	step_streams.erase(session.id)
+	session_stream_slots.erase(session.id)
 	for entry: ChatEntry in session.chat_entries:
 		append_entry_bubble(entry, session.id)
 	if AgentSessionManager.is_running(session.id):
-		restore_step_streams(session.id, session)
+		restore_session_stream_slots(session.id, session)
 	pass
 
 
@@ -195,8 +190,6 @@ func drop_list(session_id: int) -> void:
 	var list: VBoxContainer = chat_list_caches.get(session_id)
 	if list == null:
 		return
-	flush_stream_refreshes(session_id)
-	unregister_session_labels(session_id)
 	chat_list_caches.erase(session_id)
 	list.queue_free()
 	pass
@@ -234,7 +227,7 @@ func sync_new_entries(session: AgentSession) -> void:
 # ---------------------------------------------------------------------------
 
 func on_message_start(session_id: int, entry: ChatEntry) -> void:
-	if entry_labels.has(entry):
+	if get_bubble_rich_text(session_id, entry) != null:
 		return
 	if chat_list_caches.get(session_id) == null:
 		return
@@ -247,57 +240,28 @@ func on_chat_entry_update(session_id: int, entry: ChatEntry, channel: String) ->
 	if list == null:
 		return
 
-	if not step_streams.has(session_id):
-		step_streams[session_id] = SessionStepStreams.new()
-	var container: SessionStepStreams = step_streams[session_id]
+	if not session_stream_slots.has(session_id):
+		session_stream_slots[session_id] = SessionStreamSlots.new()
+	var container: SessionStreamSlots = session_stream_slots[session_id]
 
 	var slot: StreamSlot = container.slots.get(channel)
 	if slot == null or slot.entry != entry:
 		slot = StreamSlot.new()
 		slot.entry = entry
-		slot.label = entry_labels.get(entry)
-		if slot.label == null:
-			slot.label = append_entry_bubble(entry, session_id)
+		slot.rich_text = get_bubble_rich_text(session_id, entry)
+		if slot.rich_text == null:
+			slot.rich_text = append_entry_bubble(entry, session_id)
 		container.slots[channel] = slot
-	elif slot.label != null:
-		queue_stream_refresh(session_id, slot.entry, slot.label, channel)
+	elif slot.rich_text != null:
+		refresh_stream_delta(session_id, slot.entry, slot.rich_text, channel)
 	pass
 
 
-func queue_stream_refresh(session_id: int, entry: ChatEntry, label: RichTextLabel, channel: String) -> void:
-	if not pending_stream_refreshes.has(session_id):
-		pending_stream_refreshes[session_id] = {}
-	pending_stream_refreshes[session_id][channel] = {
-		"entry": entry,
-		"label": label,
-	}
-	if stream_flush_scheduled.get(session_id, false):
-		return
-	stream_flush_scheduled[session_id] = true
-	var tree := chat_scroll.get_tree()
-	if tree == null:
-		flush_stream_refreshes(session_id)
-		return
-	tree.create_timer(STREAM_FLUSH_SEC).timeout.connect(func() -> void:
-		flush_stream_refreshes(session_id)
-	, CONNECT_ONE_SHOT)
-	pass
-
-
-func flush_stream_refreshes(session_id: int) -> void:
-	stream_flush_scheduled[session_id] = false
-	var pending: Dictionary = pending_stream_refreshes.get(session_id, {})
-	pending_stream_refreshes.erase(session_id)
-	for channel: String in pending:
-		var item: Dictionary = pending[channel]
-		var entry: ChatEntry = item.get("entry")
-		var label: RichTextLabel = item.get("label")
-		if entry == null or label == null or not is_instance_valid(label):
-			continue
-		if channel == OpenAiClient.STREAM_KIND_REASONING:
-			ThinkingBubble.on_stream_delta(label, entry)
-		else:
-			refresh_body_label(label, entry, true)
+func refresh_stream_delta(session_id: int, entry: ChatEntry, rich_text: RichTextLabel, channel: String) -> void:
+	if channel == OpenAiClient.STREAM_KIND_REASONING:
+		ThinkingBubble.on_stream_delta(rich_text, entry)
+	else:
+		refresh_bubble_rich_text(rich_text, entry, true)
 	if AgentSessionManager.is_active(session_id):
 		queue_scroll_to_bottom()
 	pass
@@ -307,22 +271,22 @@ func flush_stream_refreshes(session_id: int) -> void:
 # Streaming restore
 # ---------------------------------------------------------------------------
 
-func restore_step_streams(session_id: int, session: AgentSession) -> void:
+func restore_session_stream_slots(session_id: int, session: AgentSession) -> void:
 	if session.run == null:
 		return
-	var container := SessionStepStreams.new()
+	var container := SessionStreamSlots.new()
 	if session.run.step_thinking_entry != null:
 		var thinking_slot := StreamSlot.new()
 		thinking_slot.entry = session.run.step_thinking_entry
-		thinking_slot.label = entry_labels.get(session.run.step_thinking_entry)
+		thinking_slot.rich_text = get_bubble_rich_text(session_id, session.run.step_thinking_entry)
 		container.slots["reasoning"] = thinking_slot
 	if session.run.step_agent_entry != null:
 		var agent_slot := StreamSlot.new()
 		agent_slot.entry = session.run.step_agent_entry
-		agent_slot.label = entry_labels.get(session.run.step_agent_entry)
+		agent_slot.rich_text = get_bubble_rich_text(session_id, session.run.step_agent_entry)
 		container.slots["content"] = agent_slot
 	if not container.slots.is_empty():
-		step_streams[session_id] = container
+		session_stream_slots[session_id] = container
 	pass
 
 
@@ -334,27 +298,27 @@ func append_entry_bubble(entry: ChatEntry, session_id: int) -> RichTextLabel:
 	var chat_list: VBoxContainer = chat_list_caches.get(session_id)
 	if chat_list == null:
 		return null
-	var body_label: RichTextLabel = null
+	var rich_text: RichTextLabel = null
 	match entry.kind:
 		ChatEntry.KIND_SYSTEM:
-			body_label = append_bubble(chat_list, entry, AgentColors.chat_text_muted, AgentColors.system_bubble, AgentColors.system_title)
+			rich_text = append_bubble(chat_list, entry, AgentColors.chat_text_muted, AgentColors.system_bubble, AgentColors.system_title)
 		ChatEntry.KIND_USER:
-			body_label = append_bubble(chat_list, entry, AgentColors.chat_text, AgentColors.user_bubble)
+			rich_text = append_bubble(chat_list, entry, AgentColors.chat_text, AgentColors.user_bubble)
 		ChatEntry.KIND_THINKING:
-			body_label = ThinkingBubble.append(
+			rich_text = ThinkingBubble.append(
 					chat_list,
 					entry,
 					build_bubble_style(AgentColors.thinking_bubble)
 			)
 			queue_scroll_to_bottom()
 		ChatEntry.KIND_AGENT:
-			body_label = append_bubble(chat_list, entry, AgentColors.chat_text, AgentColors.assistant_bubble)
+			rich_text = append_bubble(chat_list, entry, AgentColors.chat_text, AgentColors.assistant_bubble)
 		ChatEntry.KIND_TOOL:
-			body_label = append_bubble(chat_list, entry, AgentColors.success, AgentColors.tool_bubble)
+			rich_text = append_bubble(chat_list, entry, AgentColors.success, AgentColors.tool_bubble)
 		ChatEntry.KIND_RESULT:
-			body_label = append_bubble(chat_list, entry, AgentColors.chat_text_muted, AgentColors.result_bubble)
+			rich_text = append_bubble(chat_list, entry, AgentColors.chat_text_muted, AgentColors.result_bubble)
 		ChatEntry.KIND_ERROR:
-			body_label = ErrorBubble.append(
+			rich_text = ErrorBubble.append(
 					chat_list,
 					entry,
 					build_bubble_style(AgentColors.panel),
@@ -363,10 +327,8 @@ func append_entry_bubble(entry: ChatEntry, session_id: int) -> RichTextLabel:
 			)
 			queue_scroll_to_bottom()
 		_:
-			body_label = append_bubble(chat_list, entry, AgentColors.chat_text_muted, AgentColors.panel)
-	if body_label != null:
-		entry_labels[entry] = body_label
-	return body_label
+			rich_text = append_bubble(chat_list, entry, AgentColors.chat_text_muted, AgentColors.panel)
+	return rich_text
 
 
 func append_bubble(chat_list: VBoxContainer, entry: ChatEntry, text_color: Color, bg_color: Color, title_color: Color = AgentColors.chat_text_muted) -> RichTextLabel:
@@ -385,32 +347,32 @@ func append_bubble(chat_list: VBoxContainer, entry: ChatEntry, text_color: Color
 	title_label.add_theme_font_size_override("font_size", 12)
 	vbox.add_child(title_label)
 
-	var body_label := MarkdownUtils.create_body_label(
+	var rich_text := MarkdownUtils.create_body_label(
 		text_color,
 		entry.body,
 		markdown_enabled_for_entry(entry),
 		0.0,
 		AgentColors.code_block_bg_html()
 	)
-	vbox.add_child(body_label)
-	wrapper.set_meta(META_BODY_LABEL, body_label)
+	vbox.add_child(rich_text)
+	wrapper.set_meta(META_BUBBLE_RICH_TEXT, rich_text)
 
 	chat_list.add_child(wrapper)
 	queue_scroll_to_bottom()
-	return body_label
+	return rich_text
 
 
-func refresh_body_label(body_label: RichTextLabel, entry: ChatEntry, incremental: bool = false) -> void:
+func refresh_bubble_rich_text(rich_text: RichTextLabel, entry: ChatEntry, incremental: bool = false) -> void:
 	var markdown_enabled := markdown_enabled_for_entry(entry)
 	if incremental and not markdown_enabled:
-		var cached := MarkdownUtils.get_raw_body(body_label)
+		var cached := MarkdownUtils.get_raw_body(rich_text)
 		if entry.body.length() > cached.length() and entry.body.begins_with(cached):
-			if body_label.bbcode_enabled:
-				body_label.bbcode_enabled = false
-			body_label.append_text(entry.body.substr(cached.length()))
-			body_label.set_meta(MarkdownUtils.META_RAW_BODY, entry.body)
+			if rich_text.bbcode_enabled:
+				rich_text.bbcode_enabled = false
+			rich_text.append_text(entry.body.substr(cached.length()))
+			rich_text.set_meta(MarkdownUtils.META_RAW_BODY, entry.body)
 			return
-	MarkdownUtils.set_body_text(body_label, entry.body, markdown_enabled, 0.0, AgentColors.code_block_bg_html())
+	MarkdownUtils.set_body_text(rich_text, entry.body, markdown_enabled, 0.0, AgentColors.code_block_bg_html())
 	pass
 
 
@@ -420,13 +382,16 @@ func markdown_enabled_for_entry(entry: ChatEntry) -> bool:
 	return MarkdownToggle.markdown_enabled
 
 
-func unregister_session_labels(session_id: int) -> void:
+func get_bubble_rich_text(session_id: int, entry: ChatEntry) -> RichTextLabel:
 	var session := AgentSessionManager.get_session(session_id)
-	if session == null:
-		return
-	for entry: ChatEntry in session.chat_entries:
-		entry_labels.erase(entry)
-	pass
+	var list: VBoxContainer = chat_list_caches.get(session_id)
+	if session == null or list == null:
+		return null
+	var index := session.chat_entries.find(entry)
+	if index < 0 or index >= list.get_child_count():
+		return null
+	var wrapper: Node = list.get_child(index)
+	return wrapper.get_meta(META_BUBBLE_RICH_TEXT) as RichTextLabel
 
 
 func get_active_chat_list() -> VBoxContainer:

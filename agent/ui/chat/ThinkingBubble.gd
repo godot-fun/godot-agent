@@ -44,28 +44,28 @@ static func append(
 
 	vbox.add_child(header)
 
-	var body_label := create_body_label(StringUtils.last_lines(entry.body, PREVIEW_LINES))
-	vbox.add_child(body_label)
+	var rich_text := create_rich_text(StringUtils.last_lines(entry.body, PREVIEW_LINES))
+	vbox.add_child(rich_text)
 
-	wrapper.set_meta(AgentChatView.META_BODY_LABEL, body_label)
+	wrapper.set_meta(AgentChatView.META_BUBBLE_RICH_TEXT, rich_text)
 
 	chat_list.add_child(wrapper)
-	refresh(body_label, entry)
-	return body_label
+	refresh(rich_text, entry)
+	return rich_text
 
 
-static func on_stream_delta(body_label: RichTextLabel, entry: ChatEntry) -> void:
-	if body_label == null or entry == null or not is_instance_valid(body_label):
+static func on_stream_delta(rich_text: RichTextLabel, entry: ChatEntry) -> void:
+	if rich_text == null or entry == null or not is_instance_valid(rich_text):
 		return
-	refresh(body_label, entry)
+	refresh(rich_text, entry)
 	pass
 
 
-static func refresh(body_label: RichTextLabel, entry: ChatEntry) -> void:
-	if entry == null or not is_instance_valid(body_label):
+static func refresh(rich_text: RichTextLabel, entry: ChatEntry) -> void:
+	if entry == null or not is_instance_valid(rich_text):
 		return
 	var lines := entry.body.count("\n")
-	var header := body_label.get_parent().get_child(0) as HBoxContainer
+	var header := rich_text.get_parent().get_child(0) as HBoxContainer
 	var view_button := header.get_child(1) as Button
 	var line_label := header.get_child(2) as Label
 	var show_more := lines > PREVIEW_LINES
@@ -73,11 +73,11 @@ static func refresh(body_label: RichTextLabel, entry: ChatEntry) -> void:
 	line_label.visible = show_more
 	if show_more:
 		line_label.text = StringUtils.format("+{} line{}", lines, "" if lines == 1 else "s")
-	body_label.text = StringUtils.last_lines(entry.body, PREVIEW_LINES)
+	rich_text.text = StringUtils.last_lines(entry.body, PREVIEW_LINES)
 	pass
 
 
-static func create_body_label(text: String) -> RichTextLabel:
+static func create_rich_text(text: String) -> RichTextLabel:
 	var label := RichTextLabel.new()
 	label.selection_enabled = true
 	label.scroll_active = false

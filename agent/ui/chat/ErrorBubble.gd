@@ -30,15 +30,15 @@ static func append(
 	title_label.add_theme_font_size_override("font_size", 12)
 	vbox.add_child(title_label)
 
-	var body_label := MarkdownUtils.create_body_label(
+	var rich_text := MarkdownUtils.create_body_label(
 			AgentColors.error,
 			StringUtils.truncate_lines(entry.body, MAX_LINES),
 			MarkdownToggle.markdown_enabled,
 			0.0,
 			AgentColors.code_block_bg_html()
 	)
-	vbox.add_child(body_label)
-	wrapper.set_meta(AgentChatView.META_BODY_LABEL, body_label)
+	vbox.add_child(rich_text)
+	wrapper.set_meta(AgentChatView.META_BUBBLE_RICH_TEXT, rich_text)
 
 	if is_resumable(entry.body):
 		var resume_button := Button.new()
@@ -51,14 +51,14 @@ static func append(
 
 	chat_list.add_child(wrapper)
 	refresh_resume_buttons(chat_list, running)
-	return body_label
+	return rich_text
 
 
-static func refresh(body_label: RichTextLabel, entry: ChatEntry) -> void:
+static func refresh(rich_text: RichTextLabel, entry: ChatEntry) -> void:
 	if entry == null:
 		return
 	var display := StringUtils.truncate_lines(entry.body, MAX_LINES)
-	MarkdownUtils.set_body_text(body_label, display, MarkdownToggle.markdown_enabled, 0.0, AgentColors.code_block_bg_html())
+	MarkdownUtils.set_body_text(rich_text, display, MarkdownToggle.markdown_enabled, 0.0, AgentColors.code_block_bg_html())
 	pass
 
 
