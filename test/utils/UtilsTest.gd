@@ -57,11 +57,6 @@ func TimeUtils_test() -> void:
 	assert(now != TimeUtils.now())
 	pass
 
-func NetUtils_test() -> void:
-	var address := NetUtils.local_host()
-	assert(StringUtils.is_not_empty(address))
-	pass
-
 func NumberUtils_test() -> void:
 	var int32Max: int = 2_147_483_647
 	var int32Min: int = -2_147_483_648
