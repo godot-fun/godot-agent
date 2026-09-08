@@ -8,6 +8,7 @@ const SETTING_KEY := "agent_markdown_enabled"
 static var markdown_enabled: bool = false
 
 
+## Respect toolbar setting; tool bubbles always stay plain text.
 static func markdown_enabled_for_entry(entry: ChatEntry) -> bool:
 	if entry.kind == ChatEntry.KIND_TOOL:
 		return false

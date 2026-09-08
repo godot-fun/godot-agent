@@ -9,6 +9,7 @@ const LIST_SEPARATION := 10
 const META_BUBBLE_RICH_TEXT := "bubble_rich_text"
 
 
+## Live streaming slot — maps OpenAI stream channel to bubble widgets for one agent step.
 class StreamSlot:
 	var entry: ChatEntry = null
 	var rich_text: RichTextLabel = null
@@ -22,8 +23,10 @@ var chat_scroll: ScrollContainer
 var chat_host: Control
 
 var chat_list_caches: Dictionary[int, VBoxContainer] = {}
+## Per-session reasoning/content slots while a turn is in flight.
 var session_stream_slots: Dictionary[int, SessionStreamSlots] = {}
 var chat_bubble_flusher: ChatBubbleFlusher = ChatBubbleFlusher.new()
+## When true, new content keeps the transcript scrolled to the latest bubble.
 var stick_to_bottom: bool = true
 
 
@@ -64,6 +67,7 @@ func on_session_removed(session_id: int) -> void:
 	pass
 
 
+## Scroll after ChatBubbleFlusher drains a batch (see AgentEvents.bubble_rich_text_flushed).
 func on_bubble_rich_text_flushed() -> void:
 	queue_scroll_to_bottom()
 	pass
@@ -244,6 +248,7 @@ func on_message_start(session_id: int, entry: ChatEntry) -> void:
 	pass
 
 
+## Streaming token — ensure slot exists, then queue UI refresh (not immediate).
 func on_chat_entry_update(session_id: int, entry: ChatEntry, channel: String) -> void:
 	var list: VBoxContainer = chat_list_caches.get(session_id)
 	if list == null:
@@ -270,6 +275,7 @@ func on_chat_entry_update(session_id: int, entry: ChatEntry, channel: String) ->
 # Streaming restore
 # ---------------------------------------------------------------------------
 
+## Reattach stream slots after rebuild when switching back to a running session.
 func restore_session_stream_slots(session_id: int, session: AgentSession) -> void:
 	if session.run == null:
 		return
@@ -361,6 +367,7 @@ func append_bubble(chat_list: VBoxContainer, entry: ChatEntry, text_color: Color
 	return rich_text
 
 
+## chat_entries index matches VBoxContainer child order; label lives on wrapper meta.
 func get_bubble_rich_text(session_id: int, entry: ChatEntry) -> RichTextLabel:
 	var session := AgentSessionManager.get_session(session_id)
 	var list: VBoxContainer = chat_list_caches.get(session_id)
