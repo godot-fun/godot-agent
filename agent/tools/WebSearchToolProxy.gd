@@ -1,4 +1,4 @@
-class_name WebSearchTool
+class_name WebSearchToolProxy
 extends AgentTool
 
 ## Search the web via DuckDuckGo (no API key required).

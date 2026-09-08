@@ -11,7 +11,12 @@ static func _static_init() -> void:
 	register(WriteTool.new())
 	register(EditTool.new())
 	register(BashTool.new())
-	register(WebSearchTool.new())
+	
+	var is_proxy := await NetUtils.telnet(NetUtils.LOCAL_LOOPBACK_IP, 10809)
+	if is_proxy:
+		register(WebSearchToolProxy.new())
+	else:
+		register(WebSearchToolBing.new())
 	pass
 
 

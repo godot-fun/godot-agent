@@ -251,8 +251,8 @@ static func format_tool_body(tool_name: String, args: Dictionary[String, String]
 			return str(args.get(ReadTool.ARG_PATH, ""))
 		BashTool.NAME:
 			return str(args.get(BashTool.ARG_COMMAND, ""))
-		WebSearchTool.NAME:
-			return str(args.get(WebSearchTool.ARG_QUERY, ""))
+		WebSearchToolProxy.NAME, WebSearchToolBing.NAME:
+			return str(args.get(WebSearchToolProxy.ARG_QUERY, ""))
 		_:
 			for key: Variant in args.keys():
 				var value := str(args[key])
