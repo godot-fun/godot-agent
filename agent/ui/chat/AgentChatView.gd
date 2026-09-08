@@ -40,7 +40,6 @@ func setup(
 ) -> void:
 	chat_scroll = p_chat_scroll
 	chat_host = p_chat_host
-	chat_scroll.scroll_started.connect(on_user_scroll_started)
 	chat_scroll.gui_input.connect(on_chat_scroll_gui_input)
 	AgentEvents.events.markdown_changed.connect(on_markdown_changed)
 	AgentEvents.events.theme_changed.connect(on_theme_changed)
@@ -440,17 +439,12 @@ func reset_stick_to_bottom() -> void:
 	pass
 
 
-func on_user_scroll_started() -> void:
-	stick_to_bottom = false
-	pass
-
-
 func on_chat_scroll_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var mouse := event as InputEventMouseButton
 		if not mouse.pressed:
 			return
-		if mouse.button_index == MOUSE_BUTTON_WHEEL_UP or mouse.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+		if mouse.button_index == MOUSE_BUTTON_WHEEL_UP:
 			stick_to_bottom = false
 	elif event is InputEventPanGesture:
 		stick_to_bottom = false
