@@ -181,11 +181,18 @@ func on_field_gui_input(event: InputEvent) -> void:
 		var key := event as InputEventKey
 		if not key.pressed or key.echo:
 			return
-		if key.keycode != KEY_ENTER and key.keycode != KEY_KP_ENTER:
+		var is_enter := key.keycode == KEY_ENTER or key.keycode == KEY_KP_ENTER
+		if not is_enter:
+			is_enter = key.physical_keycode == KEY_ENTER or key.physical_keycode == KEY_KP_ENTER
+		if not is_enter:
 			return
 		if key.shift_pressed:
+			input_field.insert_text_at_caret("\n")
+			input_field.accept_event()
+			input_field.get_viewport().set_input_as_handled()
 			return
 		on_input_action_pressed()
+		input_field.accept_event()
 		input_field.get_viewport().set_input_as_handled()
 	pass
 
