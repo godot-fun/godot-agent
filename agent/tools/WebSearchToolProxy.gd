@@ -10,9 +10,11 @@ const DEFAULT_MAX_RESULTS := 5
 const MAX_RESULTS_CAP := 10
 const DDG_API_URL := "https://api.duckduckgo.com/"
 const DDG_LITE_URL := "https://lite.duckduckgo.com/lite/"
-const PROXY := "http://127.0.0.1:10809"
 
-func _init() -> void:
+var proxy_address: String = ""
+
+func _init(detected_proxy_address: String = "") -> void:
+	proxy_address = detected_proxy_address
 	name = NAME
 	description = "Search the web for documentation, API references, error messages, release notes, or general facts."
 	pass
@@ -32,22 +34,22 @@ func async_execute(args: Dictionary[String, String]) -> String:
 	var max_results := DEFAULT_MAX_RESULTS
 	if args.has(ARG_MAX_RESULTS):
 		max_results = clampi(int(str(args.get(ARG_MAX_RESULTS, DEFAULT_MAX_RESULTS))), 1, MAX_RESULTS_CAP)
-	var api_text := await search_ddg_api(query, max_results)
+	var api_text := await search_ddg_api(query, max_results, proxy_address)
 	if StringUtils.is_not_blank(api_text):
 		return api_text
-	var lite_text := await search_ddg_lite(query, max_results)
+	var lite_text := await search_ddg_lite(query, max_results, proxy_address)
 	if StringUtils.is_not_blank(lite_text):
 		return lite_text
 	return StringUtils.format("No web results for: {}", query)
 # AgentTool-Interface-Implement-End
 
-static func search_ddg_api(query: String, max_results: int) -> String:
+static func search_ddg_api(query: String, max_results: int, proxy_address: String) -> String:
 	var url := StringUtils.format(
 		"{}?q={}&format=json&no_html=1&skip_disambig=1",
 		DDG_API_URL,
 		query.uri_encode()
 	)
-	var response := await HttpHelper.async_get(url, AsyncHttp.DEFAULT_TIMEOUT_MILLIS, PROXY)
+	var response := await HttpHelper.async_get(url, AsyncHttp.DEFAULT_TIMEOUT_MILLIS, proxy_address)
 	if not response.success or response.code != 200:
 		return StringUtils.EMPTY
 	var data = response.get_body_json()
@@ -104,10 +106,10 @@ static func collect_topics_recursive(raw_topics: Variant, hits: Array[Dictionary
 		hits.append({"title": text, "url": url, "snippet": ""})
 
 
-static func search_ddg_lite(query: String, max_results: int) -> String:
+static func search_ddg_lite(query: String, max_results: int, proxy_address: String) -> String:
 	var body := StringUtils.format("q={}", query.uri_encode())
 	var headers := PackedStringArray(["Content-Type: application/x-www-form-urlencoded"])
-	var response := await HttpHelper.async_post(DDG_LITE_URL, body, headers, AsyncHttp.DEFAULT_TIMEOUT_MILLIS, PROXY)
+	var response := await HttpHelper.async_post(DDG_LITE_URL, body, headers, AsyncHttp.DEFAULT_TIMEOUT_MILLIS, proxy_address)
 	if not response.success or response.code != 200:
 		return StringUtils.EMPTY
 	return format_lite_results(response.get_body_string(), query, max_results)

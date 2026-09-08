@@ -12,9 +12,9 @@ static func _static_init() -> void:
 	register(EditTool.new())
 	register(BashTool.new())
 	
-	var is_proxy := await NetUtils.telnet(NetUtils.LOCAL_LOOPBACK_IP, 10809)
-	if is_proxy:
-		register(WebSearchToolProxy.new())
+	var detection := await ProxyUtils.async_detect_proxy()
+	if detection != null:
+		register(WebSearchToolProxy.new(detection.address))
 	else:
 		register(WebSearchToolBing.new())
 	pass
