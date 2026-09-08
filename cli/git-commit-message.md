@@ -6,8 +6,7 @@ Inspect changes before drafting (run in parallel when possible):
 
 ```bash
 git status
-git diff
-git diff --staged
+git diff HEAD
 git log --oneline -15
 ```
 

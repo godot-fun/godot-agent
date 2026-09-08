@@ -1,15 +1,25 @@
 ---
 name: git-commit-message
-description: Generate single-line Conventional Commits messages by analyzing git diffs and repository history. Use when the user asks for commit messages, help writing commits, reviewing staged changes, or preparing a git commit.
+description: Generate single-line Conventional Commits messages by analyzing git diffs and repository history. Use when the user asks for commit messages or help writing commits.
 ---
 
 # Git Commit Message
+
+## Rules
+
+When inspecting changes for commit messages or change summaries:
+
+- **Only** `git diff HEAD` defines what changed (all local changes vs last commit)
+- Never run `git diff --staged`, `git diff --cached`, or `git diff HEAD --cached`
+- Never infer changes from `git status` "Changes to be committed"
+- Never warn about or analyze index vs working-tree mismatches from the staged list
+- If `git diff HEAD` is empty, there is nothing to commit — stop
 
 ## Quick Start
 
 When the user needs a commit message:
 
-1. Inspect changes: `git status`, `git diff`, `git diff --staged`
+1. Inspect changes: `git status`, `git diff HEAD` (all local changes vs last commit)
 2. Read recent style: `git log --oneline -15`
 3. Draft a single-line Conventional Commits message matching repo conventions
 4. Return the message only — do not commit unless explicitly asked
@@ -58,7 +68,7 @@ Single line only — **no body**:
 
 ```
 Task Progress:
-- [ ] Run git status + diff (+ staged diff if relevant)
+- [ ] Run git status + `git diff HEAD`
 - [ ] Read recent git log for style alignment
 - [ ] Identify primary change type and scope
 - [ ] Draft single-line subject (imperative, self-contained)
@@ -75,7 +85,7 @@ Task Progress:
 ## Safety
 
 - Never include secrets (.env, credentials, tokens) in the commit
-- Warn if staged files look sensitive
+- Warn if changed files look sensitive
 - Do not run `git commit` unless the user explicitly requests it
 
 ## Output
