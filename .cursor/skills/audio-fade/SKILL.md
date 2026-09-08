@@ -9,7 +9,7 @@ Apply **fade-in** at the start and **fade-out** at the end without changing clip
 
 ## Rules
 
-When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€?run scripts as documented, install missing tools into `.dependency/`.
+When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€” run scripts as documented, install missing tools into `.dependency/`.
 
 ## Quick Start
 
@@ -35,11 +35,11 @@ Custom durations (seconds):
 
 | Asset | Fade-in | Fade-out |
 |-------|---------|----------|
-| UI clicks / ticks | 0.01â€?.05 s | 0.02â€?.08 s |
-| Impacts / weapons | 0.02â€?.08 s | 0.05â€?.15 s |
-| Voice lines | 0.05â€?.15 s | 0.1â€?.25 s |
-| Ambience beds | 0.3â€?.0 s | 0.5â€?.0 s |
-| BGM one-shots | 0.2â€?.5 s | 0.3â€?.0 s |
+| UI clicks / ticks | 0.01â€“0.05 s | 0.02â€“0.08 s |
+| Impacts / weapons | 0.02â€“0.08 s | 0.05â€“0.15 s |
+| Voice lines | 0.05â€“0.15 s | 0.1â€“0.25 s |
+| Ambience beds | 0.3â€“1.0 s | 0.5â€“2.0 s |
+| BGM one-shots | 0.2â€“0.5 s | 0.3â€“1.0 s |
 
 Fade-in + fade-out must stay **shorter than file duration**. Very short clips need smaller values.
 
@@ -64,9 +64,9 @@ Fades use FFmpeg `afade` with the linear `tri` curve. The script probes clip dur
 ## Agent Notes
 
 1. Use the bundled script, not hand-written `afade` filters.
-2. **Looping BGM** â€?avoid fade-out on loop assets; use `--no-fade-out` or fade-in only for one-shot intros.
-3. Clicks with instant attack â†?`--no-fade-in` or lower `-fi` (e.g. `0.01`).
-4. Tail cut off abruptly after fade â†?increase `-fo`; tail too soft â†?decrease `-fo`.
+2. **Looping BGM** â€” avoid fade-out on loop assets; use `--no-fade-out` or fade-in only for one-shot intros.
+3. Clicks with instant attack â†’ `--no-fade-in` or lower `-fi` (e.g. `0.01`).
+4. Tail cut off abruptly after fade â†’ increase `-fo`; tail too soft â†’ decrease `-fo`.
 
 ## CLI
 

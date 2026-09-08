@@ -9,20 +9,20 @@ description: >-
 
 # Image Trim
 
-Remove **invalid border padding** â€?transparent margins, flat white/green edges, or unused canvas space â€?with **Pillow**. **Default: preserve the source aspect ratio** so trimmed sprites stay proportionally consistent with the original frame.
+Remove **invalid border padding** â€” transparent margins, flat white/green edges, or unused canvas space â€” with **Pillow**. **Default: preserve the source aspect ratio** so trimmed sprites stay proportionally consistent with the original frame.
 
 Unlike `--crop` on [image-remove-white-background](../image-remove-white-background/SKILL.md) (tight alpha bbox only), this skill expands the crop box to match the original width:height ratio while removing as much empty area as possible.
 
 ## Rules
 
-When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€?run scripts as documented, install missing tools into `.dependency/`.
+When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€” run scripts as documented, install missing tools into `.dependency/`.
 
 - Run `trim.py` through the **`image-trim` manifest entry** (`.dependency/image-trim/.venv/`). Never use host `python`, `py`, `python3`, or any interpreter outside `.dependency/`.
-- Do not hand-write ImageMagick / FFmpeg crop commands â€?use the bundled script.
+- Do not hand-write ImageMagick / FFmpeg crop commands â€” use the bundled script.
 - **Single file only.** Pass one image with `--image`; directories are not supported.
 - `populated: false` for `image-trim` is not a reason to skip. Install first, set `populated: true`, retry the same command.
-- Pass the input path as-is. Output goes to `<image-dir>/image-trim/` by default â€?no path rewriting; **never overwrite sources**.
-- **Crop only** â€?preserve source pixel data and alpha; never composite onto black/white or fill background colors.
+- Pass the input path as-is. Output goes to `<image-dir>/image-trim/` by default â€” no path rewriting; **never overwrite sources**.
+- **Crop only** â€” preserve source pixel data and alpha; never composite onto black/white or fill background colors.
 - Output filenames keep the **original asset name** (e.g. `bullet_speed.png`). Cursor chat attachment paths like `empty-window_images_bullet_speed-<uuid>.png` are shortened automatically.
 
 ## Setup (first run)
@@ -51,7 +51,7 @@ Use `bin/python` on Unix.
 
 ```bash
 # Auto-detect transparent or solid-color borders (default)
-# image/sprites/hero.png â†?image/sprites/image-trim/hero.png
+# image/sprites/hero.png â†’ image/sprites/image-trim/hero.png
 .dependency/image-trim/.venv/Scripts/python.exe .ai/image-trim/trim.py --image image/sprites/hero.png
 ```
 
@@ -66,7 +66,7 @@ Custom output path:
 | Mode | Behavior |
 |------|----------|
 | `auto` *(default)* | Use alpha when the image has transparency; otherwise sample corner color and trim solid borders |
-| `alpha` | Trim only by alpha â€?pixels above `--alpha-threshold` count as content |
+| `alpha` | Trim only by alpha â€” pixels above `--alpha-threshold` count as content |
 | `color` | Trim pixels matching `--color` (or corner sample) within `--tolerance` |
 
 ```bash
@@ -95,10 +95,10 @@ Supported inputs: `.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, `.bmp`, `.tif`, `.ti
 
 **Default (preserve source):** After detecting the content bounding box, the script expands the crop rectangle to the **same width:height ratio as the source image**, centered on the content. This removes empty borders while keeping frame proportions stable for animation sheets and UI assets.
 
-**Tight crop (`--tight`):** Crop exactly to the content bbox (plus `--padding`) â€?same behavior as `--crop` on background-removal skills.
+**Tight crop (`--tight`):** Crop exactly to the content bbox (plus `--padding`) â€” same behavior as `--crop` on background-removal skills.
 
 ```bash
-# Tight crop â€?smallest rectangle around content
+# Tight crop â€” smallest rectangle around content
 .dependency/image-trim/.venv/Scripts/python.exe .ai/image-trim/trim.py --image image/sprites/hero.png --tight
 
 # Keep 4 px breathing room, still preserve aspect ratio
@@ -107,18 +107,18 @@ Supported inputs: `.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, `.bmp`, `.tif`, `.ti
 
 ## Agent Workflow
 
-1. **Pick skill** â€?remove padding/margins â†?this skill; remove backgrounds â†?[image-remove-white-background](../image-remove-white-background/SKILL.md) or [image-remove-background](../image-remove-background/SKILL.md).
-2. **Paths** â€?Pass whatever image path the user gives. Output lands in `image-trim/` next to that file by default.
-3. **One file per run** â€?trim one image, verify dimensions, then repeat for additional files if needed.
-4. **After background removal** â€?run on `image-remove-background/` outputs to drop excess transparent canvas.
-5. **Revert** â€?delete output file or `git restore`; sources are never modified.
+1. **Pick skill** â€” remove padding/margins â†’ this skill; remove backgrounds â†’ [image-remove-white-background](../image-remove-white-background/SKILL.md) or [image-remove-background](../image-remove-background/SKILL.md).
+2. **Paths** â€” Pass whatever image path the user gives. Output lands in `image-trim/` next to that file by default.
+3. **One file per run** â€” trim one image, verify dimensions, then repeat for additional files if needed.
+4. **After background removal** â€” run on `image-remove-background/` outputs to drop excess transparent canvas.
+5. **Revert** â€” delete output file or `git restore`; sources are never modified.
 
 ## Agent Notes
 
 1. Use the bundled script, not hand-written ImageMagick / FFmpeg crop commands.
-2. Missing image-trim venv â†?populate `.dependency/` per skill-dependency-manager, retry same command.
-3. **Do not copy, move, or replace the source with trimmed output** â€?tell the user where the output file is.
-4. Need **background removal** first â†?[image-remove-white-background](../image-remove-white-background/SKILL.md) or [image-remove-background](../image-remove-background/SKILL.md).
+2. Missing image-trim venv â†’ populate `.dependency/` per skill-dependency-manager, retry same command.
+3. **Do not copy, move, or replace the source with trimmed output** â€” tell the user where the output file is.
+4. Need **background removal** first â†’ [image-remove-white-background](../image-remove-white-background/SKILL.md) or [image-remove-background](../image-remove-background/SKILL.md).
 
 ## Troubleshooting
 
@@ -131,14 +131,15 @@ Supported inputs: `.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, `.bmp`, `.tif`, `.ti
 | Too much removed | Lower `--tolerance` or `--alpha-threshold`; add `--padding` |
 | Borders remain | Raise `--tolerance`; use `--mode color` with explicit `--color` |
 | Distorted proportions after trim | Do **not** pass `--tight` unless user wants tight bbox |
-| JPEG saved with wrong mode | Script converts RGBA â†?RGB automatically for `.jpg` output |
-| Output has black instead of transparency | Source may be JPEG data saved with a `.png` extension (Cursor attachments) â€?re-supply the original RGBA PNG |
+| JPEG saved with wrong mode | Script converts RGBA â†’ RGB automatically for `.jpg` output |
+| Output has black instead of transparency | Source may be JPEG data saved with a `.png` extension (Cursor attachments) â€” re-supply the original RGBA PNG |
 | Long Cursor attachment filenames | Script auto-renames to the embedded asset name (`bullet_speed.png`, etc.) |
 
 
 ## CLI
 
 Copy-paste commands: [cli/image-trim.md](../../../cli/image-trim.md)
+
 ## Related
 
 - Background removal: [image-remove-white-background](../image-remove-white-background/SKILL.md), [image-remove-background](../image-remove-background/SKILL.md)

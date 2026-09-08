@@ -5,14 +5,14 @@ description: Splits uniform sprite sheet grids into individual frame PNGs using 
 
 # Image Sprite Sheet Split
 
-Split **uniform grid sprite sheets** into individual **PNG frames** via FFmpeg crop. Preserves per-cell dimensions and alpha. Does **not** remove backgrounds â€?run [image-remove-background](../image-remove-background/SKILL.md) on frames afterward if needed.
+Split **uniform grid sprite sheets** into individual **PNG frames** via FFmpeg crop. Preserves per-cell dimensions and alpha. Does **not** remove backgrounds â€” run [image-remove-background](../image-remove-background/SKILL.md) on frames afterward if needed.
 
 ## Rules
 
-When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€?run scripts as documented, install missing tools into `.dependency/`.
+When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€” run scripts as documented, install missing tools into `.dependency/`.
 
 - Run `split_frames.py` through the **`python` manifest entry** (`.dependency/python/`). Never use host `python`, `py`, or `python3`.
-- Do not hand-write FFmpeg crop commands â€?use the bundled script.
+- Do not hand-write FFmpeg crop commands â€” use the bundled script.
 - **Single file only.** Pass one sprite sheet with `--image`; directories are not supported.
 - **Grid size required.** Supply `--grid COLSxROWS` before running (e.g. `4x4`, `6x3`).
 - `populated: false` is not a reason to skip. Install first, set `populated: true`, retry the same command.
@@ -30,7 +30,7 @@ When this skill applies, read and follow [skill-dependency-manager](../skill-dep
 **Default: `<image-dir>/image-sprite-sheet-split/<sheet-stem>/`** beside the input sheet:
 
 ```bash
-# 4Ã—4 sheet â†?image/effects/image-sprite-sheet-split/fire_sheet/fire_sheet_001.png â€?fire_sheet_016.png
+# 4Ã—4 sheet â†’ image/effects/image-sprite-sheet-split/fire_sheet/fire_sheet_001.png â€¦ fire_sheet_016.png
 .dependency/python/python .ai/image-sprite-sheet-split/split_frames.py --image image/effects/fire_sheet.png --grid 4x4
 ```
 
@@ -38,7 +38,8 @@ Custom output root:
 
 ```bash
 .dependency/python/python .ai/image-sprite-sheet-split/split_frames.py --image image/effects/fire_sheet.png --grid 4x4 -o image/effects/frames/
-# â†?image/effects/frames/fire_sheet/fire_sheet_001.png â€?```
+# â†’ image/effects/frames/fire_sheet/fire_sheet_001.png â€¦
+```
 
 ## Defaults
 
@@ -48,7 +49,8 @@ Custom output root:
 | `--grid` | **Required** | **COLSxROWS** (columns first), e.g. `4x4`, `6x3` |
 | Output | `image-sprite-sheet-split/<stem>/` | Use `-o` / `--output` for a custom root directory |
 
-Frames are exported **row-major** (leftâ†’right, topâ†’bottom): `_001`, `_002`, â€?
+Frames are exported **row-major** (leftâ†’right, topâ†’bottom): `_001`, `_002`, â€¦
+
 Supported inputs: `.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, `.bmp`, `.tif`, `.tiff`, `.avif`, `.ico`.
 
 ## When to use
@@ -60,19 +62,19 @@ Supported inputs: `.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, `.bmp`, `.tif`, `.ti
 | Sheets without gutters or border padding | Sheets with grid lines, gutters, or outer padding |
 | Preparing frames for per-frame background removal | Auto-detecting grid size (must be supplied) |
 
-**rembg on whole sheets removes animation content** â€?split frames first, then remove backgrounds per frame if needed.
+**rembg on whole sheets removes animation content** â€” split frames first, then remove backgrounds per frame if needed.
 
 ## Agent Workflow
 
-1. **Confirm grid size** â€?ask or infer from context (`4x4`, `3x6`, etc.).
-2. **Trial first** â€?split one sheet, inspect `image-sprite-sheet-split/<stem>/001.png` and the last frame.
-3. **Check warnings** â€?if image size is not evenly divisible, verify cell crops still look correct.
-4. **More sheets** â€?run once per file with the same grid settings.
-5. **Revert** â€?delete the output folder; sources are never modified.
+1. **Confirm grid size** â€” ask or infer from context (`4x4`, `3x6`, etc.).
+2. **Trial first** â€” split one sheet, inspect `image-sprite-sheet-split/<stem>/001.png` and the last frame.
+3. **Check warnings** â€” if image size is not evenly divisible, verify cell crops still look correct.
+4. **More sheets** â€” run once per file with the same grid settings.
+5. **Revert** â€” delete the output folder; sources are never modified.
 
 ## Examples
 
-4Ã—4 explosion sheet (2048Ã—2048 â†?16 Ã— 512Ã—512):
+4Ã—4 explosion sheet (2048Ã—2048 â†’ 16 Ã— 512Ã—512):
 
 ```bash
 .dependency/python/python .ai/image-sprite-sheet-split/split_frames.py --image sheet.png --grid 4x4
@@ -87,9 +89,9 @@ Supported inputs: `.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, `.bmp`, `.tif`, `.ti
 ## Agent Notes
 
 1. Use the bundled script, not hand-written FFmpeg crop commands.
-2. Missing Python/FFmpeg â†?populate `.dependency/` per skill-dependency-manager, retry same command.
-3. **Do not copy, move, or replace the source with frame outputs** â€?tell the user where the output folder is.
-4. Need **transparent frames** â†?split first, then [image-remove-background](../image-remove-background/SKILL.md) on each frame.
+2. Missing Python/FFmpeg â†’ populate `.dependency/` per skill-dependency-manager, retry same command.
+3. **Do not copy, move, or replace the source with frame outputs** â€” tell the user where the output folder is.
+4. Need **transparent frames** â†’ split first, then [image-remove-background](../image-remove-background/SKILL.md) on each frame.
 
 ## Troubleshooting
 
@@ -99,7 +101,7 @@ Supported inputs: `.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, `.bmp`, `.tif`, `.ti
 | Directory passed to `--image` | Run once per sheet; this skill accepts image files only |
 | Output already exists | Delete the existing frame folder or choose a different `-o` path |
 | Wrong frame count | Verify `--grid` matches the sheet layout |
-| Misaligned crops | Sheet may have gutters/padding â€?this skill expects a clean uniform grid |
+| Misaligned crops | Sheet may have gutters/padding â€” this skill expects a clean uniform grid |
 | Unused pixels warning | Image size is not evenly divisible by the grid; inspect output frames |
 | Need transparent frames | Split first, then [image-remove-background](../image-remove-background/SKILL.md) on frames |
 
@@ -107,6 +109,7 @@ Supported inputs: `.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, `.bmp`, `.tif`, `.ti
 ## CLI
 
 Copy-paste commands: [cli/image-sprite-sheet-split.md](../../../cli/image-sprite-sheet-split.md)
+
 ## Related
 
 - Transparent cutouts per frame: [image-remove-background](../image-remove-background/SKILL.md)

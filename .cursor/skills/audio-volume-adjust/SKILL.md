@@ -5,11 +5,11 @@ description: Adjusts audio file volume up or down using FFmpeg. Use when the use
 
 # Audio Volume Adjust
 
-Apply a uniform **gain change** across the full clip â€?no fade, no loudness targeting. Negative dB reduces level; positive dB increases it.
+Apply a uniform **gain change** across the full clip â€” no fade, no loudness targeting. Negative dB reduces level; positive dB increases it.
 
 ## Rules
 
-When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€?run scripts as documented, install missing tools into `.dependency/`.
+When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€” run scripts as documented, install missing tools into `.dependency/`.
 
 ## Quick Start
 
@@ -19,7 +19,7 @@ Reduce by 6 dB (~half amplitude), output to `<audio-dir>/audio-volume-adjust/<au
 .dependency/python/python .ai/audio-volume-adjust/adjust.py --audio path/to/audio.wav --volume -6
 ```
 
-Example: `audio/sfx/tank/tank_move.wav` â†?`audio/sfx/tank/audio-volume-adjust/tank_move.wav`
+Example: `audio/sfx/tank/tank_move.wav` â†’ `audio/sfx/tank/audio-volume-adjust/tank_move.wav`
 
 Boost by 3 dB:
 
@@ -52,10 +52,10 @@ Originals are never modified. Input must be a single audio file (`--audio`), not
 
 1. Use the bundled script, not hand-written `volume` filters.
 2. Always pass `--volume` in dB (negative = reduce, positive = boost).
-3. Missing Python/FFmpeg â†?populate `.dependency/` per skill-dependency-manager, retry same command.
-4. **Do not copy, move, or replace the source with the adjusted output** â€?tell the user where `audio-volume-adjust/` files are; they swap assets manually when ready.
+3. Missing Python/FFmpeg â†’ populate `.dependency/` per skill-dependency-manager, retry same command.
+4. **Do not copy, move, or replace the source with the adjusted output** â€” tell the user where `audio-volume-adjust/` files are; they swap assets manually when ready.
 5. Do not use `--output` pointing at the source file; the script refuses output paths that would overwrite inputs.
-6. **Boosting** (positive dB) can clip peaks â€?warn the user; prefer small boosts (+3 dB or less).
+6. **Boosting** (positive dB) can clip peaks â€” warn the user; prefer small boosts (+3 dB or less).
 7. FFmpeg filter details and dB math: [reference.md](reference.md)
 
 ## CLI

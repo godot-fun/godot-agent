@@ -17,7 +17,7 @@ Convert a supported video to **60fps at the source resolution** via [Video2X](ht
 |------|-------|
 | Frame rate | 60 FPS |
 | Resolution | Unchanged |
-| Already ~60fps (59.5â€?0.5, includes 59.94) | **Skip** â€?no output file |
+| Already ~60fps (59.5â€“60.5, includes 59.94) | **Skip** â€” no output file |
 | Below 60fps | Video2X RIFE interpolate, then snap to 60 |
 | Above 60fps | FFmpeg `fps=60` drop (RIFE cannot reduce fps) |
 | Video | H.265 Main10 (`libx265`, `yuv420p10le`, CRF 12) |
@@ -27,18 +27,18 @@ Convert a supported video to **60fps at the source resolution** via [Video2X](ht
 ## Pipeline
 
 1. **Probe** fps with ffprobe.
-2. **Already ~60?** â†?skip (do nothing).
-3. **Above 60?** â†?FFmpeg drop to 60fps â†?`video-to-60fps/`.
-4. **Below 60?** â†?Video2X RIFE (`-m` integer multiplier) at source resolution â†?FFmpeg to exact 60fps MP4 â†?`video-to-60fps/`.
+2. **Already ~60?** â†’ skip (do nothing).
+3. **Above 60?** â†’ FFmpeg drop to 60fps â†’ `video-to-60fps/`.
+4. **Below 60?** â†’ Video2X RIFE (`-m` integer multiplier) at source resolution â†’ FFmpeg to exact 60fps MP4 â†’ `video-to-60fps/`.
 
 ## Rules
 
-When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€?run scripts as documented, install missing tools into `.dependency/`.
+When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€” run scripts as documented, install missing tools into `.dependency/`.
 
 - Run `convert.py` through **`.dependency/python/python`**. Never use host `python` / `ffmpeg` / `video2x`.
 - **Never overwrite sources.** Outputs go under `video-to-60fps/`.
-- Use the bundled script â€?do not hand-write equivalent `video2x` / `ffmpeg` commands.
-- **One file per run** â€?pass `--video` with a single file; repeat for each clip in a batch.
+- Use the bundled script â€” do not hand-write equivalent `video2x` / `ffmpeg` commands.
+- **One file per run** â€” pass `--video` with a single file; repeat for each clip in a batch.
 - Do **not** use FFmpeg `fps=60` duplication to fake 60fps on below-60 sources.
 
 ## Setup (first run)
@@ -55,10 +55,10 @@ Example:
 
 ```
 assets/video/clip.mp4          (1280Ã—720 24fps)
-  â†?assets/video/video-to-60fps/clip.mp4  (1280Ã—720 60fps)
+  â†’ assets/video/video-to-60fps/clip.mp4  (1280Ã—720 60fps)
 ```
 
-Already-60fps source â†?no output file; log `[skip]`.
+Already-60fps source â†’ no output file; log `[skip]`.
 
 Then upscale (fps kept):
 
@@ -72,7 +72,7 @@ Then upscale (fps kept):
 |---------|---------|-------|
 | Interpolator | RIFE `rife-v4.6` | Video2X `-p rife` |
 | Multiplier | Auto | Smallest integer `-m` so `src_fps Ã— m` is at least ~60 |
-| UHD mode | Auto | `--uhd` when width â‰?1920 |
+| UHD mode | Auto | `--uhd` when width â‰¥ 1920 |
 | Already ~60fps | Skipped | No file written |
 
 ## Common Flags
@@ -90,10 +90,10 @@ Then upscale (fps kept):
 ## Agent Notes
 
 1. Use the bundled script only.
-2. Missing Python / FFmpeg / Video2X â†?populate `.dependency/`, set `populated: true`, retry the same command.
+2. Missing Python / FFmpeg / Video2X â†’ populate `.dependency/`, set `populated: true`, retry the same command.
 3. Tell the user where `video-to-60fps/` outputs are; they swap assets manually. Skipped ~60fps files have **no** output.
 4. Interpolate at **source resolution**, then `video-to-4k`. Do not 4K-upscale first.
-5. Video2X `-m` is an integer. 30fps â†?Ã—2 = 60. 24fps â†?Ã—3 = 72, then FFmpeg snaps to 60.
+5. Video2X `-m` is an integer. 30fps â†’ Ã—2 = 60. 24fps â†’ Ã—3 = 72, then FFmpeg snaps to 60.
 6. Pipeline / FFmpeg / Video2X details: [reference.md](reference.md)
 
 ## Tests

@@ -5,11 +5,11 @@ description: Normalizes asset filenames by splitting on common separators, strip
 
 # File Naming Normalization
 
-Normalize asset filenames: split â†?clean each segment â†?join with `_` (snake_case).
+Normalize asset filenames: split â†’ clean each segment â†’ join with `_` (snake_case).
 
 ## Rules
 
-When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€?run scripts as documented, install missing tools into `.dependency/`.
+When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€” run scripts as documented, install missing tools into `.dependency/`.
 
 ## Quick Start
 
@@ -31,8 +31,8 @@ Preview without renaming:
 2. **Clean** each segment:
    - Drop pure-digit segments with 4+ digits (asset IDs like `38126`)
    - Keep short pure-digit segments as variant indices (`1`, `2`, `01`)
-   - Remove leading digits from mixed segments (`001Hero` â†?`Hero`)
-   - Remove trailing digits from mixed segments (`Attack02` â†?`Attack`, `foisal72` â†?`foisal`)
+   - Remove leading digits from mixed segments (`001Hero` â†’ `Hero`)
+   - Remove trailing digits from mixed segments (`Attack02` â†’ `Attack`, `foisal72` â†’ `foisal`)
    - Remove user-given strings (see `--strip`)
 3. **Drop** empty segments after cleaning.
 4. **Join** remaining segments with `_`.
@@ -118,8 +118,8 @@ Name collision: 'Assets/Hero-Attack.wav' and 'Assets/Hero.Attack.wav' both map t
 1. Use the bundled script; do not hand-write rename loops unless the script cannot cover the case.
 2. Always run `--dry-run` first when normalizing many files; show the user the preview.
 3. `--strip` removes the given substring anywhere inside each segment (not only at edges). Pass one `--strip` per string.
-4. Segments that become empty after cleaning are dropped (`81135` alone â†?skipped).
-5. Collisions (two files mapping to the same name) abort with an error â€?resolve manually or normalize in smaller batches.
+4. Segments that become empty after cleaning are dropped (`81135` alone â†’ skipped).
+5. Collisions (two files mapping to the same name) abort with an error â€” resolve manually or normalize in smaller batches.
 6. Only renames files; does not rename directories.
 
 ## CLI

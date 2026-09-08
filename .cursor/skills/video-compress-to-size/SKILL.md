@@ -7,16 +7,16 @@ description: Compresses a single video file to stay under a user-specified max f
 
 Re-encode a supported video so the output is **at or under** a given max file size.
 
-**Default:** probe and use a GPU encoder when available (NVIDIA NVENC â†?AMD AMF â†?Intel QSV), single-pass VBR. If no GPU works, fall back to **CPU two-pass** (`libx264` / `libx265`).
+**Default:** probe and use a GPU encoder when available (NVIDIA NVENC â†’ AMD AMF â†’ Intel QSV), single-pass VBR. If no GPU works, fall back to **CPU two-pass** (`libx264` / `libx265`).
 
 ## Rules
 
-When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€?run scripts as documented, install missing tools into `.dependency/`.
+When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€” run scripts as documented, install missing tools into `.dependency/`.
 
 - Run `compress.py` through **`.dependency/python/python.exe`**. Never use host `python` / `ffmpeg`.
 - **Never overwrite sources.** Outputs go under `video-compress-to-size/`.
-- Use the bundled script â€?do not hand-write equivalent FFmpeg commands.
-- **One file per run** â€?pass `--video` with a single file; repeat for each clip in a batch.
+- Use the bundled script â€” do not hand-write equivalent FFmpeg commands.
+- **One file per run** â€” pass `--video` with a single file; repeat for each clip in a batch.
 
 ## Quick Start
 
@@ -24,7 +24,7 @@ When this skill applies, read and follow [skill-dependency-manager](../skill-dep
 .dependency/python/python .ai/video-compress-to-size/compress.py --video path/to/clip.mp4 --max-size 50MB
 ```
 
-Bare numbers mean **MB** (`--max-size 50` â‰?`50MB`):
+Bare numbers mean **MB** (`--max-size 50` â‰¡ `50MB`):
 
 ```bash
 .dependency/python/python .ai/video-compress-to-size/compress.py --video assets/intro.mp4 --max-size 50
@@ -34,7 +34,7 @@ Example:
 
 ```
 assets/video/intro.mp4
-  â†?assets/video/video-compress-to-size/intro.mp4
+  â†’ assets/video/video-compress-to-size/intro.mp4
 ```
 
 Force CPU (slow, more precise two-pass):
@@ -58,12 +58,12 @@ Force CPU (slow, more precise two-pass):
 
 | Setting | Default | Notes |
 |---------|---------|-------|
-| Encoder | GPU first | `h264_nvenc` â†?`h264_amf` â†?`h264_qsv` â†?`libx264` |
+| Encoder | GPU first | `h264_nvenc` â†’ `h264_amf` â†’ `h264_qsv` â†’ `libx264` |
 | HEVC | `--hevc` | Same order with `hevc_*` / `libx265` |
 | Container | `.mp4` | Always MP4 |
 | Audio | AAC 128k | Lowered automatically on tiny budgets |
 | Preset | `medium` | Mapped (e.g. NVENC `p4`); override with `--preset` |
-| Already under limit | Skipped | `[skip] â€?(already under limit)` |
+| Already under limit | Skipped | `[skip] â€¦ (already under limit)` |
 | Safety margin | GPU ~90% / CPU ~92% | Headroom for mux / VBR overshoot |
 
 ## Common Flags
@@ -82,11 +82,11 @@ Custom output path:
 
 1. Use the bundled script, not hand-written `ffmpeg` commands.
 2. Always pass `--max-size` from the user (ask if missing). Prefer their unit wording; bare numbers are MB.
-3. **Prefer GPU** â€?do not pass `--cpu` unless the user asks or GPU encode fails.
+3. **Prefer GPU** â€” do not pass `--cpu` unless the user asks or GPU encode fails.
 4. Do **not** downscale or change fps unless the user asks.
-5. Sources already â‰?max size are skipped.
+5. Sources already â‰¤ max size are skipped.
 6. Tell the user where `video-compress-to-size/` files are; they swap assets manually when ready.
-7. Missing Python/FFmpeg â†?populate `.dependency/` per skill-dependency-manager, retry same command.
+7. Missing Python/FFmpeg â†’ populate `.dependency/` per skill-dependency-manager, retry same command.
 8. Pipeline details: [reference.md](reference.md)
 
 ## Tests

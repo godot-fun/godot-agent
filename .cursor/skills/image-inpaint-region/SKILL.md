@@ -2,7 +2,7 @@
 name: image-inpaint-region
 description: >-
   Local circular region inpainting with LaMa (IOPaint). Uses IOPaint default
-  InpaintRequest and mask handling. Use for å±€éƒ¨é‡ç»?/ å±€éƒ¨ä¿®å¤?/ inpaint when
+  InpaintRequest and mask handling. Use for å±€éƒ¨é‡ç»˜ / å±€éƒ¨ä¿®å¤ / inpaint when
   circle center and radius cx,cy,r are known.
 ---
 
@@ -14,14 +14,14 @@ description: >-
 
 ## Rules
 
-When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€?run scripts as documented, install missing tools into `.dependency/`.
+When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€” run scripts as documented, install missing tools into `.dependency/`.
 
 - Run `inpaint.py` through the **`iopaint` manifest entry** (`.dependency/iopaint/.venv/`). Never use host `python`, `py`, `python3`, or any interpreter outside `.dependency/`.
-- Do not hand-write equivalent inpaint commands â€?use the bundled script.
+- Do not hand-write equivalent inpaint commands â€” use the bundled script.
 - **Single file only.** Pass one image with `--image`; directories are not supported.
 - **Require region first.** If `--region cx,cy,r` is missing, inspect the image (or ask the user) before running.
-- **Use IOPaint defaults** for inference config unless the user explicitly asks otherwise â€?do not invent custom mask blur, compositing, or hd_strategy overrides in the script.
-- Pass the input path as-is. Output goes to `<image-dir>/image-inpaint-region/` by default â€?no path rewriting.
+- **Use IOPaint defaults** for inference config unless the user explicitly asks otherwise â€” do not invent custom mask blur, compositing, or hd_strategy overrides in the script.
+- Pass the input path as-is. Output goes to `<image-dir>/image-inpaint-region/` by default â€” no path rewriting.
 - **Never overwrite source files.** Output lands in `image-inpaint-region/` or `--output`.
 
 ## Setup (first run)
@@ -52,7 +52,7 @@ LaMa weights (`big-lama.pt`) download on first run.
 **Both `--image` and `--region` are required:**
 
 ```bash
-# image/foo.png â†?image/image-inpaint-region/foo.png
+# image/foo.png â†’ image/image-inpaint-region/foo.png
 # center (148, 248), radius 48
 .dependency/iopaint/.venv/Scripts/python.exe .ai/image-inpaint-region/inpaint.py --image image/foo.png --region 148,248,48
 ```
@@ -79,7 +79,7 @@ Custom output path:
 
 ## IOPaint defaults used
 
-These come from `InpaintRequest()` and `iopaint run` â€?the script does not override them:
+These come from `InpaintRequest()` and `iopaint run` â€” the script does not override them:
 
 | Setting | Default | Notes |
 |---------|---------|-------|
@@ -88,7 +88,7 @@ These come from `InpaintRequest()` and `iopaint run` â€?the script does not over
 | `hd_strategy` | `Crop` | LaMa erase-model preprocessing |
 | `hd_strategy_crop_trigger_size` | `800` | Crop when long side > 800 px |
 | `hd_strategy_crop_margin` | `128` | Margin around mask for crop strategy |
-| Mask threshold | `127` | `>= 127 â†?255`, else `0` |
+| Mask threshold | `127` | `>= 127 â†’ 255`, else `0` |
 
 The skill only adds `--region cx,cy,r` so you do not need a separate mask file.
 
@@ -97,7 +97,7 @@ The skill only adds `--region cx,cy,r` so you do not need a separate mask file.
 | Option | Default | Notes |
 |--------|---------|-------|
 | `--image` | **Required** | Single supported image file |
-| `--region` | **Required** | `cx,cy,r` â€?center x, center y, radius in pixels |
+| `--region` | **Required** | `cx,cy,r` â€” center x, center y, radius in pixels |
 | Output | `<image-dir>/image-inpaint-region/<name>.png` | Use `-o` / `--output` for custom file or directory |
 | `--model` | `lama` | IOPaint model name |
 | `--device` | `cpu` | `cpu` or `cuda` (falls back via IOPaint `check_device`) |
@@ -106,17 +106,17 @@ Supported inputs: `.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, `.bmp`, `.tif`, `.ti
 
 ## Agent Workflow
 
-1. **Confirm source** â€?user path only; do not copy into `image/` or use chat attachment cache.
-2. **Confirm region** â€?inspect the image and determine circle center `(cx, cy)` and radius `r` before running.
-3. **One file per run** â€?process one image, verify the result, then repeat for additional files if needed.
-4. **Inspect** â€?check the inpainted area; leftover content â†?larger `r`; nearby art eaten â†?smaller `r` or move center.
-5. **Revert** â€?delete the output file or `git restore`; sources are never modified.
+1. **Confirm source** â€” user path only; do not copy into `image/` or use chat attachment cache.
+2. **Confirm region** â€” inspect the image and determine circle center `(cx, cy)` and radius `r` before running.
+3. **One file per run** â€” process one image, verify the result, then repeat for additional files if needed.
+4. **Inspect** â€” check the inpainted area; leftover content â†’ larger `r`; nearby art eaten â†’ smaller `r` or move center.
+5. **Revert** â€” delete the output file or `git restore`; sources are never modified.
 
 ## Agent Notes
 
 1. Use the bundled script, not hand-written IOPaint CLI with separate mask files unless the user already has a mask image.
-2. Missing iopaint venv â†?populate `.dependency/` per skill-dependency-manager, retry same command.
-3. **Do not copy, move, or replace the source with inpainted output** â€?tell the user where the output file is.
+2. Missing iopaint venv â†’ populate `.dependency/` per skill-dependency-manager, retry same command.
+3. **Do not copy, move, or replace the source with inpainted output** â€” tell the user where the output file is.
 4. For full IOPaint UI / brush mask editing, use the upstream `iopaint start` workflow instead.
 
 ## Troubleshooting
@@ -137,6 +137,7 @@ Supported inputs: `.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, `.bmp`, `.tif`, `.ti
 ## CLI
 
 Copy-paste commands: [cli/image-inpaint-region.md](../../../cli/image-inpaint-region.md)
+
 ## Related
 
 - Engine: [Sanster/IOPaint](https://github.com/Sanster/IOPaint) (LaMa)

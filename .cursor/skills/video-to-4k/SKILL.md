@@ -25,18 +25,18 @@ Convert a supported video to a **unified 4K master**:
 ## Pipeline
 
 1. **Probe** with ffprobe (width, height, fps, audio).
-2. **Already 4K?** (`width â‰?3840` and `height â‰?2160`) â†?skip Video2X.
-3. **Below 4K** â†?[Video2X](https://github.com/k4yt3x/video2x) Real-ESRGAN upscale (scale 2 or 4) to intermediate under `video-to-4k/upscaled/`.
-4. **Always** FFmpeg final encode â†?`video-to-4k/` at the unified specs above.
+2. **Already 4K?** (`width â‰¥ 3840` and `height â‰¥ 2160`) â†’ skip Video2X.
+3. **Below 4K** â†’ [Video2X](https://github.com/k4yt3x/video2x) Real-ESRGAN upscale (scale 2 or 4) to intermediate under `video-to-4k/upscaled/`.
+4. **Always** FFmpeg final encode â†’ `video-to-4k/` at the unified specs above.
 
 ## Rules
 
-When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€?run scripts as documented, install missing tools into `.dependency/`.
+When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€” run scripts as documented, install missing tools into `.dependency/`.
 
 - Run `convert.py` through **`.dependency/python/python`**. Never use host `python` / `ffmpeg` / `video2x`.
 - **Never overwrite sources.** Outputs go under `video-to-4k/` (final) and `video-to-4k/upscaled/` (Video2X intermediate).
-- Use the bundled script â€?do not hand-write equivalent `video2x` / `ffmpeg` commands.
-- **One file per run** â€?pass `--video` with a single file; repeat for each clip in a batch.
+- Use the bundled script â€” do not hand-write equivalent `video2x` / `ffmpeg` commands.
+- **One file per run** â€” pass `--video` with a single file; repeat for each clip in a batch.
 
 ## Setup (first run)
 
@@ -50,8 +50,8 @@ Download the **CLI** release (not the Qt6 installer) from [video2x releases](htt
 
 | Platform | Release asset |
 |----------|---------------|
-| Windows | `video2x-windows-amd64.zip` â†?`video2x.exe` |
-| Linux | `Video2X-x86_64.AppImage` (or distro package) â†?register as `bin` |
+| Windows | `video2x-windows-amd64.zip` â†’ `video2x.exe` |
+| Linux | `Video2X-x86_64.AppImage` (or distro package) â†’ register as `bin` |
 
 Register in `.dependency/manifest.json`:
 
@@ -74,11 +74,11 @@ Example:
 
 ```
 assets/video/clip.mp4
-  â†?assets/video/video-to-4k/upscaled/clip.mkv   (Video2X, only if below 4K)
-  â†?assets/video/video-to-4k/clip.mp4            (final master)
+  â†’ assets/video/video-to-4k/upscaled/clip.mkv   (Video2X, only if below 4K)
+  â†’ assets/video/video-to-4k/clip.mp4            (final master)
 ```
 
-Already-4K source â†?only `video-to-4k/clip.mp4` (FFmpeg only).
+Already-4K source â†’ only `video-to-4k/clip.mp4` (FFmpeg only).
 
 Anime / cartoon content (Real-ESRGAN anime model):
 
@@ -111,10 +111,10 @@ Anime / cartoon content (Real-ESRGAN anime model):
 ## Agent Notes
 
 1. Use the bundled script only.
-2. Missing Python / FFmpeg / Video2X â†?populate `.dependency/`, set `populated: true`, retry the same command.
+2. Missing Python / FFmpeg / Video2X â†’ populate `.dependency/`, set `populated: true`, retry the same command.
 3. Tell the user where `video-to-4k/` (and `video-to-4k/upscaled/` if used) outputs are; they swap assets manually.
 4. Default model is **general** (`realesrgan-plus`). Pass `--anime` for anime/cartoon.
-5. Do **not** force fps. Keep the source frame rate. Need 60fps interpolation â†?**video-to-60fps** first (RIFE at source resolution).
+5. Do **not** force fps. Keep the source frame rate. Need 60fps interpolation â†’ **video-to-60fps** first (RIFE at source resolution).
 6. Pipeline / FFmpeg / Video2X details: [reference.md](reference.md)
 
 ## Tests

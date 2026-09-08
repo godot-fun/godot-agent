@@ -7,7 +7,7 @@ description: Converts a single video file to OGV (Theora + Vorbis in Ogg contain
 
 Convert a supported video file to **OGV** (Theora video + Vorbis audio in an Ogg container) via FFmpeg.
 
-Lossy sources always go through a lossless intermediate first, then OGV â€?to minimize generation loss.
+Lossy sources always go through a lossless intermediate first, then OGV â€” to minimize generation loss.
 
 1. Export **FFV1 + FLAC** lossless MKV to `video-to-ogv/lossless/`
 2. Encode **Theora q=10 + Vorbis q=10** OGV to `video-to-ogv/`
@@ -16,7 +16,7 @@ Only Theora encoding is lossy; the intermediate decode is bit-perfect.
 
 ## Rules
 
-When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€?run scripts as documented, install missing tools into `.dependency/`.
+When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€” run scripts as documented, install missing tools into `.dependency/`.
 
 ## Quick Start
 
@@ -30,15 +30,15 @@ Example:
 
 ```
 assets/video/intro.mp4
-  â†?assets/video/video-to-ogv/lossless/intro.mkv   (FFV1+FLAC intermediate)
-  â†?assets/video/video-to-ogv/intro.ogv            (final Godot asset)
+  â†’ assets/video/video-to-ogv/lossless/intro.mkv   (FFV1+FLAC intermediate)
+  â†’ assets/video/video-to-ogv/intro.ogv            (final Godot asset)
 ```
 
 ## Format Defaults
 
 | Setting | Default | Notes |
 |---------|---------|-------|
-| Pipeline | Lossless â†?OGV | Skipped when source is already lossless |
+| Pipeline | Lossless â†’ OGV | Skipped when source is already lossless |
 | Intermediate | FFV1 + FLAC (`.mkv`) | Written to `video-to-ogv/lossless/`; large but bit-perfect decode |
 | Final container | OGG (`.ogv`) | Godot `VideoStreamTheora` format |
 | Final video | Theora q=10 | Single-pass from lossless intermediate |
@@ -48,7 +48,7 @@ assets/video/intro.mp4
 
 ## Disk Usage
 
-Lossless intermediates are **much larger** than source MP4s (720p â‰?50â€?00 MB per 10 s clip). They are kept in `video-to-ogv/lossless/` for re-encoding. Delete manually when done, or pass **`--clean-lossless`** to remove after each successful OGV export.
+Lossless intermediates are **much larger** than source MP4s (720p â‰ˆ 50â€“200 MB per 10 s clip). They are kept in `video-to-ogv/lossless/` for re-encoding. Delete manually when done, or pass **`--clean-lossless`** to remove after each successful OGV export.
 
 ## Common Flags
 
@@ -65,13 +65,13 @@ Custom output path:
 ## Agent Notes
 
 1. Use the bundled script, not hand-written `ffmpeg -i â€¦` commands.
-2. **Always run with no extra quality flags** â€?the script only supports the lossless MKV â†?OGV pipeline.
+2. **Always run with no extra quality flags** â€” the script only supports the lossless MKV â†’ OGV pipeline.
 3. **Do not downscale or change frame rate** unless the user explicitly asks.
-4. **Do not resample audio or change channel layout** unless the user explicitly asks â€?omit `--standardize`.
+4. **Do not resample audio or change channel layout** unless the user explicitly asks â€” omit `--standardize`.
 5. **Already Theora+Vorbis OGV?** Stream-copied by default (no generation loss).
 6. Tell the user where `video-to-ogv/` outputs are; they swap assets manually when ready.
-7. Missing Python/FFmpeg â†?populate `.dependency/` per skill-dependency-manager, retry same command.
-8. Need **48 kHz audio** â†?pass `--standardize`.
+7. Missing Python/FFmpeg â†’ populate `.dependency/` per skill-dependency-manager, retry same command.
+8. Need **48 kHz audio** â†’ pass `--standardize`.
 9. FFmpeg pipeline details: [reference.md](reference.md)
 
 ## Tests

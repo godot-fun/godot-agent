@@ -5,11 +5,11 @@ description: Normalizes a single audio file to consistent LUFS loudness with tru
 
 # Audio Loudness Normalization
 
-Loudness-normalize one audio file to a target LUFS with true-peak limiting. **Preserves input format** â€?same extension and sample rate as the source. Directories are not supported; run once per file to process a folder.
+Loudness-normalize one audio file to a target LUFS with true-peak limiting. **Preserves input format** â€” same extension and sample rate as the source. Directories are not supported; run once per file to process a folder.
 
 ## Rules
 
-When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€?run scripts as documented, install missing tools into `.dependency/`.
+When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€” run scripts as documented, install missing tools into `.dependency/`.
 
 ## Quick Start
 
@@ -19,7 +19,7 @@ Default: **-14 LUFS**, **-1.5 dBTP**, output to `<audio-dir>/audio-loudness-norm
 .dependency/python/python .ai/audio-loudness-normalization/normalize.py --audio path/to/audio.wav
 ```
 
-Example: `audio/sfx/tank/tank_move.wav` â†?`audio/sfx/tank/audio-loudness-normalization/tank_move.wav`
+Example: `audio/sfx/tank/tank_move.wav` â†’ `audio/sfx/tank/audio-loudness-normalization/tank_move.wav`
 
 ## LUFS Targets
 
@@ -46,11 +46,11 @@ One category per folder. Mixed folders: split first, then normalize each file wi
 ## Agent Notes
 
 1. Use the bundled script (two-pass `loudnorm`), not hand-written FFmpeg.
-2. **Preserves input format** â€?same extension and sample rate (`-ar` forced to source); does not resample.
-3. Missing Python/FFmpeg â†?populate `.dependency/` per skill-dependency-manager, retry same command.
-4. **Do not copy, move, or replace the source with the normalized output** â€?tell the user where `audio-loudness-normalization/` files are; they swap assets manually when ready.
+2. **Preserves input format** â€” same extension and sample rate (`-ar` forced to source); does not resample.
+3. Missing Python/FFmpeg â†’ populate `.dependency/` per skill-dependency-manager, retry same command.
+4. **Do not copy, move, or replace the source with the normalized output** â€” tell the user where `audio-loudness-normalization/` files are; they swap assets manually when ready.
 5. Do not use `-output` pointing at the source file; the script refuses paths that would overwrite the input.
-6. Do not fix uneven levels with per-asset volume in game code â€?re-normalize sources.
+6. Do not fix uneven levels with per-asset volume in game code â€” re-normalize sources.
 7. Engine bus defaults and rationale: [reference.md](reference.md)
 
 ## Tests

@@ -9,7 +9,7 @@ Convert a supported audio file to **OGG Vorbis** via FFmpeg. **Defaults preserve
 
 ## Rules
 
-When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€?run scripts as documented, install missing tools into `.dependency/`.
+When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€” run scripts as documented, install missing tools into `.dependency/`.
 
 ## Quick Start
 
@@ -19,7 +19,7 @@ Default output: `<audio-dir>/audio-to-ogg/<basename>.ogg`
 .dependency/python/python .ai/audio-to-ogg/convert.py --audio path/to/audio.wav
 ```
 
-Example: `audio/sfx/tank/tank_move.wav` â†?`audio/sfx/tank/audio-to-ogg/tank_move.ogg`
+Example: `audio/sfx/tank/tank_move.wav` â†’ `audio/sfx/tank/audio-to-ogg/tank_move.ogg`
 
 ## Format Defaults
 
@@ -35,10 +35,10 @@ Example: `audio/sfx/tank/tank_move.wav` â†?`audio/sfx/tank/audio-to-ogg/tank_mov
 
 | `-q` | Approx. bitrate | Typical use |
 |------|-----------------|-------------|
-| 10 | ~500 kbps | **Default** â€?highest fidelity |
-| 7â€? | ~224â€?56 kbps | Smaller music/voice exports |
-| 5â€? | ~160â€?92 kbps | Gameplay SFX, BGM |
-| 3â€? | ~96â€?28 kbps | Short UI clicks, ambient loops |
+| 10 | ~500 kbps | **Default** â€” highest fidelity |
+| 7â€“8 | ~224â€“256 kbps | Smaller music/voice exports |
+| 5â€“6 | ~160â€“192 kbps | Gameplay SFX, BGM |
+| 3â€“4 | ~96â€“128 kbps | Short UI clicks, ambient loops |
 
 ## Common Flags
 
@@ -61,10 +61,10 @@ Custom output path:
 ## Agent Notes
 
 1. Use the bundled script, not hand-written `ffmpeg -i â€¦` commands.
-2. **Sample rate is always preserved** â€?use the `audio-sample-rate-standardize` skill if resampling is needed.
+2. **Sample rate is always preserved** â€” use the `audio-sample-rate-standardize` skill if resampling is needed.
 3. **Already Vorbis OGG?** Stream-copied by default (no generation loss).
-4. Missing Python/FFmpeg â†?populate `.dependency/` per skill-dependency-manager, retry same command.
-5. **Do not copy, move, or replace the source with converted output** â€?tell the user where output files are; they swap assets manually when ready.
+4. Missing Python/FFmpeg â†’ populate `.dependency/` per skill-dependency-manager, retry same command.
+5. **Do not copy, move, or replace the source with converted output** â€” tell the user where output files are; they swap assets manually when ready.
 6. FFmpeg codec and quality details: [reference.md](reference.md)
 
 ## Tests

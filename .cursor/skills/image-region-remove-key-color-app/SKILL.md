@@ -15,10 +15,10 @@ Use after [image-remove-white-background](../image-remove-white-background/SKILL
 
 ## Rules
 
-When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€?run scripts as documented, install missing tools into `.dependency/`.
+When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€” run scripts as documented, install missing tools into `.dependency/`.
 
 - Run `app.py` through the **`image-region-remove-key-color-app` manifest entry** (`.dependency/image-region-remove-key-color-app/.venv/`). Never use host `python`, `py`, `python3`, or any interpreter outside `.dependency/`.
-- Do not hand-write a one-off Gradio app â€?use the bundled script at `.ai/image-region-remove-key-color-app/app.py`.
+- Do not hand-write a one-off Gradio app â€” use the bundled script at `.ai/image-region-remove-key-color-app/app.py`.
 - `populated: false` is not a reason to skip. Install first, set `populated: true`, retry the same command.
 - This skill is **interactive**: launch the UI, give the user the local URL, wait for them to paint / Apply / Download.
 
@@ -64,12 +64,12 @@ Download uses the **same filename** as the source (forced `.png`). No share / no
 
 ## UI workflow
 
-1. **Upload** the image via the file control (or preload via CLI) â€?do not drop into the editor canvas.
+1. **Upload** the image via the file control (or preload via CLI) â€” do not drop into the editor canvas.
 2. Transparent areas appear as **gray** in the editor (download still has real alpha).
 3. **Paint** over local white / chroma patches to remove.
 4. Choose **Key color** / tolerance / feather if needed.
-5. Click **Apply** â†?preview (gray = transparent).
-6. Click **Download** â†?browser download with the original name.
+5. Click **Apply** â†’ preview (gray = transparent).
+6. Click **Download** â†’ browser download with the original name.
 7. Click **Stop server** when done (or `Ctrl+C` in the terminal).
 
 ## Key color
@@ -84,12 +84,12 @@ Use the UI color picker (default `#FFFFFF`). CLI `--preset` only sets the initia
 
 ## Agent workflow
 
-1. **When** â€?user needs selective / painted removal of flat key-color patches; full-image `global` would damage white subjects; `border`/`both` left enclosed islands.
-2. **Ensure deps** â€?manifest entry + venv with Pillow + Gradio.
-3. **Launch** â€?run `app.py` with the user image path; prefer `--no-browser` if the agent cannot open a GUI browser, and print `http://127.0.0.1:<port>`.
-4. **Hand off** â€?tell the user to paint, Apply, then Download (same filename as source).
-5. **Verify** â€?after the user confirms download, they are done; do not overwrite sources.
-6. **Stop** â€?click **Stop server** in the UI, or terminate the Gradio process when the user is done.
+1. **When** â€” user needs selective / painted removal of flat key-color patches; full-image `global` would damage white subjects; `border`/`both` left enclosed islands.
+2. **Ensure deps** â€” manifest entry + venv with Pillow + Gradio.
+3. **Launch** â€” run `app.py` with the user image path; prefer `--no-browser` if the agent cannot open a GUI browser, and print `http://127.0.0.1:<port>`.
+4. **Hand off** â€” tell the user to paint, Apply, then Download (same filename as source).
+5. **Verify** â€” after the user confirms download, they are done; do not overwrite sources.
+6. **Stop** â€” click **Stop server** in the UI, or terminate the Gradio process when the user is done.
 
 ## Defaults
 
@@ -108,8 +108,8 @@ Use the UI color picker (default `#FFFFFF`). CLI `--preset` only sets the initia
 |-------|-----|
 | Manifest / venv missing | Follow **Setup**; update manifest |
 | `No paint strokes found` | Brush visibly over the white islands; ensure strokes are on the editor layers |
-| Subject holes outside paint | Only paint the background islands â€?strokes gate keying |
-| Leftover fringe in region | Raise tolerance by 5â€?0 |
+| Subject holes outside paint | Only paint the background islands â€” strokes gate keying |
+| Leftover fringe in region | Raise tolerance by 5â€“10 |
 | Port in use | Pass `--port 7861` (etc.) |
 | Gradio import error | Reinstall in the skill venv: `pip install -U Pillow gradio` |
 
@@ -117,6 +117,7 @@ Use the UI color picker (default `#FFFFFF`). CLI `--preset` only sets the initia
 ## CLI
 
 Copy-paste commands: [cli/image-region-remove-key-color-app.md](../../../cli/image-region-remove-key-color-app.md)
+
 ## Related
 
 - Full-image / batch keying: [image-remove-white-background](../image-remove-white-background/SKILL.md)

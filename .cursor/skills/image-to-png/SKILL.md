@@ -5,16 +5,16 @@ description: Converts image files to PNG using FFmpeg while preserving dimension
 
 # Image to PNG
 
-Convert a **single image file** to **lossless PNG** via FFmpeg. **Defaults preserve source quality** â€?dimensions unchanged, alpha channel kept when present.
+Convert a **single image file** to **lossless PNG** via FFmpeg. **Defaults preserve source quality** â€” dimensions unchanged, alpha channel kept when present.
 
 ## Rules
 
-When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€?run scripts as documented, install missing tools into `.dependency/`.
+When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€” run scripts as documented, install missing tools into `.dependency/`.
 
-- Run `convert.py` through the bundled script â€?do not hand-write `ffmpeg -i â€¦` commands.
+- Run `convert.py` through the bundled script â€” do not hand-write `ffmpeg -i â€¦` commands.
 - **Single file only.** Pass one image with `--image`; directories are not supported.
 - **Never overwrite source files.** Output goes to `image-to-png/` (or `--output`) by default.
-- **Do not resize or recompress** unless the user explicitly asks â€?omit quality/size overrides.
+- **Do not resize or recompress** unless the user explicitly asks â€” omit quality/size overrides.
 - `populated: false` for `ffmpeg` is not a reason to skip. Install first, set `populated: true`, retry the same command.
 
 ## Setup (first run)
@@ -39,7 +39,7 @@ Use `bin/ffmpeg` on Unix (no `.exe`).
 **Default: create an `image-to-png/` folder beside the input file** and write the PNG there:
 
 ```bash
-# assets/ui/icon.webp â†?assets/ui/image-to-png/icon.png
+# assets/ui/icon.webp â†’ assets/ui/image-to-png/icon.png
 .dependency/python/python .ai/image-to-png/convert.py --image assets/ui/icon.webp
 ```
 
@@ -76,18 +76,18 @@ Supported inputs: `.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`, `.bmp`, `.tif`, `.ti
 
 ## Agent Workflow
 
-1. **Paths** â€?Pass whatever image path the user gives. Output lands in `image-to-png/` next to that file by default.
-2. **One file per run** â€?convert one image, verify the result, then repeat for additional files if needed.
+1. **Paths** â€” Pass whatever image path the user gives. Output lands in `image-to-png/` next to that file by default.
+2. **One file per run** â€” convert one image, verify the result, then repeat for additional files if needed.
 3. **Already PNG?** Stream-copied by default (no generation loss) unless `--strip-alpha` is set.
-4. **Revert** â€?delete output file or `git restore`; sources are never modified.
+4. **Revert** â€” delete output file or `git restore`; sources are never modified.
 
 ## Agent Notes
 
 1. Use the bundled script, not hand-written FFmpeg commands.
-2. Missing Python/FFmpeg â†?populate `.dependency/` per skill-dependency-manager, retry same command.
-3. **Do not copy, move, or replace the source with converted output** â€?tell the user where the output file is.
-4. Need **transparent cutouts** â†?use [image-remove-background](../image-remove-background/SKILL.md), not this skill.
-5. Need **resize** after conversion â†?[image-resize](../image-resize/SKILL.md).
+2. Missing Python/FFmpeg â†’ populate `.dependency/` per skill-dependency-manager, retry same command.
+3. **Do not copy, move, or replace the source with converted output** â€” tell the user where the output file is.
+4. Need **transparent cutouts** â†’ use [image-remove-background](../image-remove-background/SKILL.md), not this skill.
+5. Need **resize** after conversion â†’ [image-resize](../image-resize/SKILL.md).
 6. FFmpeg codec and probing details: [reference.md](reference.md)
 
 ## Troubleshooting
@@ -104,6 +104,7 @@ Supported inputs: `.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`, `.bmp`, `.tif`, `.ti
 ## CLI
 
 Copy-paste commands: [cli/image-to-png.md](../../../cli/image-to-png.md)
+
 ## Related
 
 - Resize after conversion: [image-resize](../image-resize/SKILL.md)

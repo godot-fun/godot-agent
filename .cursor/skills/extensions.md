@@ -1,4 +1,4 @@
-﻿- humanizer
+- humanizer
 
 ```
 git clone https://github.com/blader/humanizer.git ./.cursor/skills/humanizer

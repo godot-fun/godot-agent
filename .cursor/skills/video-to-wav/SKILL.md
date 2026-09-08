@@ -5,11 +5,11 @@ description: Extracts audio tracks from a single video file to PCM WAV using FFm
 
 # Video to WAV
 
-Extract the first audio track from a supported video file to **PCM WAV** via FFmpeg. **Defaults preserve source quality** â€?no resampling, bit depth matched from the embedded audio (32-bit float for lossy codecs), channels preserved, video stream discarded (`-vn`).
+Extract the first audio track from a supported video file to **PCM WAV** via FFmpeg. **Defaults preserve source quality** â€” no resampling, bit depth matched from the embedded audio (32-bit float for lossy codecs), channels preserved, video stream discarded (`-vn`).
 
 ## Rules
 
-When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€?run scripts as documented, install missing tools into `.dependency/`.
+When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€” run scripts as documented, install missing tools into `.dependency/`.
 
 ## Quick Start
 
@@ -19,7 +19,7 @@ Default output: `<video-dir>/video-to-wav/<basename>.wav`
 .dependency/python/python .ai/video-to-wav/convert.py --video path/to/video.mp4
 ```
 
-Example: `assets/clip.mp4` â†?`assets/video-to-wav/clip.wav` (same rate/depth as embedded audio)
+Example: `assets/clip.mp4` â†’ `assets/video-to-wav/clip.wav` (same rate/depth as embedded audio)
 
 ## Format Defaults
 
@@ -27,7 +27,7 @@ Example: `assets/clip.mp4` â†?`assets/video-to-wav/clip.wav` (same rate/depth as
 |---------|---------|-------|
 | Audio track | First (`a:0`) | Use `--track N` for alternate tracks (0-based) |
 | Sample rate | Preserve source | Always kept; use `audio-sample-rate-standardize` to resample |
-| Bit depth | Match source | Probed per file; lossy â†?32-bit float PCM |
+| Bit depth | Match source | Probed per file; lossy â†’ 32-bit float PCM |
 | Channels | Preserve source | Always kept from embedded audio |
 | Lossless PCM in container | Stream copy | Bit-perfect when no overrides |
 
@@ -52,11 +52,11 @@ Custom output path:
 ## Agent Notes
 
 1. Use the bundled script, not hand-written `ffmpeg -i â€¦` commands.
-2. **Sample rate is always preserved** â€?chain `audio-sample-rate-standardize` if resampling is needed.
-3. **Do not reduce bit depth** unless the user explicitly asks â€?omit `-b`.
-4. **No audio track** â€?script reports failure; confirm the file has an audio stream.
-5. Missing Python/FFmpeg â†?populate `.dependency/` per skill-dependency-manager, retry same command.
-6. **Do not copy, move, or replace the source with extracted output** â€?tell the user where output files are; they swap assets manually when ready.
+2. **Sample rate is always preserved** â€” chain `audio-sample-rate-standardize` if resampling is needed.
+3. **Do not reduce bit depth** unless the user explicitly asks â€” omit `-b`.
+4. **No audio track** â€” script reports failure; confirm the file has an audio stream.
+5. Missing Python/FFmpeg â†’ populate `.dependency/` per skill-dependency-manager, retry same command.
+6. **Do not copy, move, or replace the source with extracted output** â€” tell the user where output files are; they swap assets manually when ready.
 7. This skill is for video containers only; standalone audio files are out of scope.
 8. FFmpeg codec and probing details: [reference.md](reference.md)
 

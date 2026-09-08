@@ -9,7 +9,7 @@ Remove leading/trailing silence via FFmpeg `silenceremove`.
 
 ## Rules
 
-When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€?run scripts as documented, install missing tools into `.dependency/`.
+When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€” run scripts as documented, install missing tools into `.dependency/`.
 
 ## Quick Start
 
@@ -46,8 +46,8 @@ Originals are never modified. Input must be a single audio file (`--audio`), not
 ## Agent Notes
 
 1. Use the bundled script, not ad-hoc `-ss`/`-to`.
-2. **Looping BGM** â€?avoid end-trim; can break loop seams. Skip this skill or trim manually.
-3. Attack or reverb cut off â†?raise `-t` (e.g. `-45` or `-40`).
+2. **Looping BGM** â€” avoid end-trim; can break loop seams. Skip this skill or trim manually.
+3. Attack or reverb cut off â†’ raise `-t` (e.g. `-45` or `-40`).
 4. FFmpeg filter details: [reference.md](reference.md)
 
 ## CLI

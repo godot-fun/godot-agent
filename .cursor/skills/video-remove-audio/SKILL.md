@@ -5,16 +5,16 @@ description: Removes all audio and music tracks from a single video file using F
 
 # Video Remove Audio
 
-Strip **all audio tracks** (music, voice, SFX) from a supported video file via FFmpeg. **Defaults preserve the video bitstream** â€?stream-copy video (`-c:v copy`), drop audio (`-an`), no re-encode.
+Strip **all audio tracks** (music, voice, SFX) from a supported video file via FFmpeg. **Defaults preserve the video bitstream** â€” stream-copy video (`-c:v copy`), drop audio (`-an`), no re-encode.
 
 ## Rules
 
-When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€?run scripts as documented, install missing tools into `.dependency/`.
+When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€” run scripts as documented, install missing tools into `.dependency/`.
 
 - Run `remove_audio.py` through **`.dependency/python/python.exe`**. Never use host `python` / `ffmpeg`.
 - **Never overwrite sources.** Outputs go under `video-remove-audio/`.
-- Use the bundled script â€?do not hand-write equivalent FFmpeg commands.
-- **One file per run** â€?pass `--video` with a single file; repeat for each clip in a batch.
+- Use the bundled script â€” do not hand-write equivalent FFmpeg commands.
+- **One file per run** â€” pass `--video` with a single file; repeat for each clip in a batch.
 
 ## Quick Start
 
@@ -26,7 +26,7 @@ Example:
 
 ```
 assets/intro.mp4
-  â†?assets/video-remove-audio/intro.mp4
+  â†’ assets/video-remove-audio/intro.mp4
 ```
 
 Same video codec/container, no audio.
@@ -53,12 +53,12 @@ Same video codec/container, no audio.
 
 ## Agent Notes
 
-1. Use the bundled script, not hand-written `ffmpeg -i â€?-an` commands.
+1. Use the bundled script, not hand-written `ffmpeg -i â€¦ -an` commands.
 2. Always uses **stream copy** for video (`-c:v copy -an`).
 3. This removes **all** audio; it does **not** isolate or mute music while keeping dialogue (no stem separation).
-4. Missing Python/FFmpeg â†?populate `.dependency/` per skill-dependency-manager, retry same command.
-5. **Do not copy, move, or replace the source with muted output** â€?tell the user where `video-remove-audio/` files are; they swap assets manually when ready.
-6. Need audio extracted instead of removed â†?use **video-to-wav**.
+4. Missing Python/FFmpeg â†’ populate `.dependency/` per skill-dependency-manager, retry same command.
+5. **Do not copy, move, or replace the source with muted output** â€” tell the user where `video-remove-audio/` files are; they swap assets manually when ready.
+6. Need audio extracted instead of removed â†’ use **video-to-wav**.
 7. FFmpeg details: [reference.md](reference.md)
 
 ## Tests

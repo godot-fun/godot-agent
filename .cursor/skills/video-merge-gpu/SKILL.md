@@ -3,7 +3,7 @@ name: video-merge-gpu
 description: >-
   Merges multiple videos from a folder (sorted by filename) into one clip with a
   random xfade transition (0.5s) between each pair; freeze-pads so total duration
-  equals the sum of sources. Encodes with GPU HEVC only (NVENC / AMF / QSV â€?no
+  equals the sum of sources. Encodes with GPU HEVC only (NVENC / AMF / QSV â€” no
   CPU libx265 fallback). Exports 3840Ã—2160 60fps H.265 Main10 40Mbps + AAC
   320kbps. Use when the user wants video-merge-gpu, GPU video merge, NVENC merge,
   hevc_nvenc concat, GPU æ‹¼æŽ¥, è§†é¢‘æ‹¼æŽ¥ GPU, or batch stitch clips with xfade on GPU.
@@ -14,18 +14,18 @@ disable-model-invocation: true
 
 Same merge as [`video-merge`](../video-merge/SKILL.md): concatenate every video in a folder (filename sort) into **one** high-quality MP4, random FFmpeg `xfade` (0.5s) + matching `acrossfade`, freeze-pad so output length equals the sum of source durations.
 
-**GPU encode only.** Probe `hevc_nvenc` â†?`hevc_amf` â†?`hevc_qsv` (HEVC Main10). If none work, **fail** â€?do not fall back to `libx265`. Use `video-merge` when CPU encode is wanted.
+**GPU encode only.** Probe `hevc_nvenc` â†’ `hevc_amf` â†’ `hevc_qsv` (HEVC Main10). If none work, **fail** â€” do not fall back to `libx265`. Use `video-merge` when CPU encode is wanted.
 
 xfade / scale / pad still run on CPU; only the H.265 encode is hardware.
 
 ## Rules
 
-When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€?run scripts as documented, install missing tools into `.dependency/`.
+When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€” run scripts as documented, install missing tools into `.dependency/`.
 
 - Run `merge.py` through **`.dependency/python/python.exe`**. Never use host `python` / `ffmpeg`.
 - **Never overwrite sources.** Outputs go under `video-merge-gpu/`.
-- Use the bundled script â€?do not hand-write equivalent FFmpeg commands.
-- **Folder input only** â€?pass `--folder` with a directory of clips (top-level files; no recurse).
+- Use the bundled script â€” do not hand-write equivalent FFmpeg commands.
+- **Folder input only** â€” pass `--folder` with a directory of clips (top-level files; no recurse).
 
 ## Quick Start
 
@@ -40,7 +40,7 @@ assets/shots/
   01.mp4
   02.mp4
   03.mp4
-â†?assets/shots/video-merge-gpu/shots.mp4
+â†’ assets/shots/video-merge-gpu/shots.mp4
 ```
 
 ## Output Spec (fixed)
@@ -73,13 +73,13 @@ Each cut independently samples one transition. Printed in the run log.
 
 ## Agent Notes
 
-1. Use the bundled script â€?do **not** hand-write `ffmpeg` xfade chains.
-2. Transition duration is fixed at **0.5s** â€?no duration override flag.
+1. Use the bundled script â€” do **not** hand-write `ffmpeg` xfade chains.
+2. Transition duration is fixed at **0.5s** â€” no duration override flag.
 3. Every clip **except the first** must be **longer than 0.5s** (incoming side of `xfade`).
-4. Single file in the folder â†?re-encode to the output spec with no transition.
+4. Single file in the folder â†’ re-encode to the output spec with no transition.
 5. Many clips (4K10) auto-chunk (max 8 inputs per filtergraph) to avoid OOM; transitions stay correct across chunk boundaries.
-6. **No CPU fallback.** Missing GPU HEVC Main10 â†?report the probe failure; suggest `video-merge` only if the user accepts CPU.
-7. Missing Python/FFmpeg â†?populate `.dependency/` per skill-dependency-manager, retry.
+6. **No CPU fallback.** Missing GPU HEVC Main10 â†’ report the probe failure; suggest `video-merge` only if the user accepts CPU.
+7. Missing Python/FFmpeg â†’ populate `.dependency/` per skill-dependency-manager, retry.
 8. FFmpeg filter / encoder details: [reference.md](reference.md)
 
 ## Tests

@@ -5,11 +5,11 @@ description: Splits a single audio file into two segments (part 1 before the spl
 
 # Audio Split
 
-Split one audio file into **part 1** (start â†?split point) and **part 2** (split point â†?end).
+Split one audio file into **part 1** (start â†’ split point) and **part 2** (split point â†’ end).
 
 ## Rules
 
-When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€?run scripts as documented, install missing tools into `.dependency/`.
+When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€” run scripts as documented, install missing tools into `.dependency/`.
 
 ## Quick Start
 
@@ -53,9 +53,9 @@ Originals are never modified. Supported: `.wav`, `.mp3`, `.ogg`, `.flac`, `.aac`
 ## Agent Notes
 
 1. Use the bundled script, not hand-written `-ss`/`-to` commands.
-2. **Looping BGM** â€?splitting breaks the loop; prefer two source assets or manual crossfade planning.
-3. Split point at `0` or at/after duration â†?script errors with a clear message.
-4. Missing Python/FFmpeg â†?populate `.dependency/` per skill-dependency-manager, retry same command.
+2. **Looping BGM** â€” splitting breaks the loop; prefer two source assets or manual crossfade planning.
+3. Split point at `0` or at/after duration â†’ script errors with a clear message.
+4. Missing Python/FFmpeg â†’ populate `.dependency/` per skill-dependency-manager, retry same command.
 5. FFmpeg details and manual fallback: [reference.md](reference.md)
 
 ## Tests

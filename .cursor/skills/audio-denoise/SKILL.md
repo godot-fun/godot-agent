@@ -9,7 +9,7 @@ Reduce background noise via FFmpeg `afftdn`.
 
 ## Rules
 
-When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€?run scripts as documented, install missing tools into `.dependency/`.
+When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€” run scripts as documented, install missing tools into `.dependency/`.
 
 ## Quick Start
 
@@ -23,7 +23,7 @@ Denoise a single audio file, output to `<audio-dir>/audio-denoise/<audio-name>`:
 
 | Setting | Default | Notes |
 |---------|---------|-------|
-| Denoise | `afftdn` | `nr=10` dB, `nf=-25` dB â€?conservative for SFX |
+| Denoise | `afftdn` | `nr=10` dB, `nf=-25` dB â€” conservative for SFX |
 
 ## Common Flags
 
@@ -39,9 +39,9 @@ Originals are never modified. Input must be a single audio file (`--audio`), not
 ## Agent Notes
 
 1. Use the bundled script, not hand-written `afftdn` filters.
-2. **Default is light denoise** â€?do not raise `--nr` unless the user asks; heavy denoise dulls transients.
-3. Missing Python/FFmpeg â†?populate `.dependency/` per skill-dependency-manager, retry same command.
-4. **Do not copy, move, or replace the source with denoised output** â€?tell the user where `audio-denoise/` files are; they swap assets manually when ready.
+2. **Default is light denoise** â€” do not raise `--nr` unless the user asks; heavy denoise dulls transients.
+3. Missing Python/FFmpeg â†’ populate `.dependency/` per skill-dependency-manager, retry same command.
+4. **Do not copy, move, or replace the source with denoised output** â€” tell the user where `audio-denoise/` files are; they swap assets manually when ready.
 
 ## Tests
 

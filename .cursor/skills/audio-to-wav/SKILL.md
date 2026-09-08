@@ -5,11 +5,11 @@ description: Converts a single audio file to WAV (PCM) using FFmpeg while preser
 
 # Audio to WAV
 
-Convert a supported audio file to **PCM WAV** via FFmpeg. **Defaults preserve source quality** â€?sample rate is always kept, bit depth matched from the source (32-bit float for lossy inputs), channels preserved.
+Convert a supported audio file to **PCM WAV** via FFmpeg. **Defaults preserve source quality** â€” sample rate is always kept, bit depth matched from the source (32-bit float for lossy inputs), channels preserved.
 
 ## Rules
 
-When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€?run scripts as documented, install missing tools into `.dependency/`.
+When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€” run scripts as documented, install missing tools into `.dependency/`.
 
 ## Quick Start
 
@@ -19,14 +19,14 @@ Default output: `<audio-dir>/audio-to-wav/<basename>.wav`
 .dependency/python/python .ai/audio-to-wav/convert.py --audio path/to/audio.flac
 ```
 
-Example: `audio/sfx/tank/tank_move.flac` â†?`audio/sfx/tank/audio-to-wav/tank_move.wav` (same rate/depth)
+Example: `audio/sfx/tank/tank_move.flac` â†’ `audio/sfx/tank/audio-to-wav/tank_move.wav` (same rate/depth)
 
 ## Format Defaults
 
 | Setting | Default | Notes |
 |---------|---------|-------|
 | Sample rate | Preserve source | Always kept; no resampling |
-| Bit depth | Match source | Probed per file; lossy â†?32-bit float PCM |
+| Bit depth | Match source | Probed per file; lossy â†’ 32-bit float PCM |
 | Channels | Preserve source | Always kept from source audio |
 | Existing PCM WAV | Stream copy | Bit-perfect when no overrides |
 
@@ -51,11 +51,11 @@ Custom output path:
 ## Agent Notes
 
 1. Use the bundled script, not hand-written `ffmpeg -i â€¦` commands.
-2. **Sample rate is always preserved** â€?use the `audio-sample-rate-standardize` skill if resampling is needed.
-3. **Do not reduce bit depth** unless the user explicitly asks â€?omit `-b`.
+2. **Sample rate is always preserved** â€” use the `audio-sample-rate-standardize` skill if resampling is needed.
+3. **Do not reduce bit depth** unless the user explicitly asks â€” omit `-b`.
 4. **Already PCM WAV?** Stream-copied by default (no generation loss).
-5. Missing Python/FFmpeg â†?populate `.dependency/` per skill-dependency-manager, retry same command.
-6. **Do not copy, move, or replace the source with converted output** â€?tell the user where output files are; they swap assets manually when ready.
+5. Missing Python/FFmpeg â†’ populate `.dependency/` per skill-dependency-manager, retry same command.
+6. **Do not copy, move, or replace the source with converted output** â€” tell the user where output files are; they swap assets manually when ready.
 7. FFmpeg codec and probing details: [reference.md](reference.md)
 
 ## Tests

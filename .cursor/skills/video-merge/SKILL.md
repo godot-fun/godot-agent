@@ -17,12 +17,12 @@ Concatenate every video in a folder (filename sort) into **one** high-quality MP
 
 ## Rules
 
-When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€?run scripts as documented, install missing tools into `.dependency/`.
+When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) â€” run scripts as documented, install missing tools into `.dependency/`.
 
 - Run `merge.py` through **`.dependency/python/python.exe`**. Never use host `python` / `ffmpeg`.
 - **Never overwrite sources.** Outputs go under `video-merge/`.
-- Use the bundled script â€?do not hand-write equivalent FFmpeg commands.
-- **Folder input only** â€?pass `--folder` with a directory of clips (top-level files; no recurse).
+- Use the bundled script â€” do not hand-write equivalent FFmpeg commands.
+- **Folder input only** â€” pass `--folder` with a directory of clips (top-level files; no recurse).
 
 ## Quick Start
 
@@ -37,7 +37,7 @@ assets/shots/
   01.mp4
   02.mp4
   03.mp4
-â†?assets/shots/video-merge/shots.mp4
+â†’ assets/shots/video-merge/shots.mp4
 ```
 
 ## Output Spec (fixed)
@@ -70,12 +70,12 @@ Each cut independently samples one transition. Printed in the run log.
 
 ## Agent Notes
 
-1. Use the bundled script â€?do **not** hand-write `ffmpeg` xfade chains.
-2. Transition duration is fixed at **0.5s** â€?no duration override flag.
+1. Use the bundled script â€” do **not** hand-write `ffmpeg` xfade chains.
+2. Transition duration is fixed at **0.5s** â€” no duration override flag.
 3. Every clip **except the first** must be **longer than 0.5s** (incoming side of `xfade`).
-4. Single file in the folder â†?re-encode to the output spec with no transition.
+4. Single file in the folder â†’ re-encode to the output spec with no transition.
 5. Many clips (4K10) auto-chunk (max 4 inputs per filtergraph) to avoid OOM; transitions stay correct across chunk boundaries.
-6. Missing Python/FFmpeg â†?populate `.dependency/` per skill-dependency-manager, retry.
+6. Missing Python/FFmpeg â†’ populate `.dependency/` per skill-dependency-manager, retry.
 7. FFmpeg filter details: [reference.md](reference.md)
 
 ## Tests
