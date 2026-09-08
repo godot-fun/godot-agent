@@ -673,7 +673,7 @@ static func configure_rich_text_label(label: RichTextLabel, text_color: Color) -
 	label.add_theme_font_override("bold_font", Fonts.bold())
 	label.add_theme_font_override("italics_font", Fonts.semibold())
 	label.add_theme_font_override("bold_italics_font", Fonts.bold())
-	label.add_theme_font_override("mono_font", Fonts.semibold())
+	label.add_theme_font_override("mono_font", Fonts.regular())
 	label.add_theme_constant_override("table_v_separation", TABLE_V_SEPARATION)
 	label.custom_minimum_size = Vector2(0, BODY_LABEL_MIN_HEIGHT)
 	pass
