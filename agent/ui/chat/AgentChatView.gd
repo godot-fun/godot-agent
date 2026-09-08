@@ -9,22 +9,10 @@ const LIST_SEPARATION := 10
 const META_BUBBLE_RICH_TEXT := "bubble_rich_text"
 
 
-## Live streaming slot — maps OpenAI stream channel to bubble widgets for one agent step.
-class StreamSlot:
-	var entry: ChatEntry = null
-	var rich_text: RichTextLabel = null
-
-
-class SessionStreamSlots:
-	var slots: Dictionary[String, StreamSlot] = {}
-
-
 var chat_scroll: ScrollContainer
 var chat_host: Control
 
 var chat_list_caches: Dictionary[int, VBoxContainer] = {}
-## Per-session reasoning/content slots while a turn is in flight.
-var session_stream_slots: Dictionary[int, SessionStreamSlots] = {}
 var chat_bubble_flusher: ChatBubbleFlusher = ChatBubbleFlusher.new()
 ## When true, new content keeps the transcript scrolled to the latest bubble.
 var stick_to_bottom: bool = true
@@ -48,7 +36,6 @@ func setup(
 	AgentEvents.events.session_removed.connect(on_session_removed)
 	AgentEvents.events.agent_start.connect(on_agent_start)
 	AgentEvents.events.session_stop.connect(on_session_stop)
-	AgentEvents.events.turn_start.connect(on_turn_start)
 	AgentEvents.events.chat_entry_add.connect(on_message_start)
 	AgentEvents.events.chat_entry_update.connect(on_chat_entry_update)
 	AgentEvents.events.chat_bubble_flushed.connect(on_chat_bubble_flushed)
@@ -67,7 +54,6 @@ func on_session_selected(session_id: int) -> void:
 
 func on_session_removed(session_id: int) -> void:
 	drop_list(session_id)
-	session_stream_slots.erase(session_id)
 	pass
 
 
@@ -75,15 +61,9 @@ func on_session_stop(session_id: int) -> void:
 	if AgentSessionManager.is_active(session_id):
 		refresh_error_resume_buttons()
 	chat_bubble_flusher.flush_now()
-	session_stream_slots.erase(session_id)
 	var session := AgentSessionManager.get_session(session_id)
 	if session != null:
 		sync_new_entries(session)
-	pass
-
-
-func on_turn_start(session_id: int) -> void:
-	session_stream_slots.erase(session_id)
 	pass
 
 
@@ -108,52 +88,21 @@ func on_message_start(session_id: int, entry: ChatEntry) -> void:
 	pass
 
 
-## Streaming token — ensure slot exists, then queue UI refresh (not immediate).
-func on_chat_entry_update(session_id: int, entry: ChatEntry, channel: String) -> void:
-	var list: VBoxContainer = chat_list_caches.get(session_id)
-	if list == null:
+## Streaming token — resolve bubble from list cache, then queue UI refresh.
+func on_chat_entry_update(session_id: int, entry: ChatEntry, _channel: String) -> void:
+	if chat_list_caches.get(session_id) == null:
 		return
-
-	if not session_stream_slots.has(session_id):
-		session_stream_slots[session_id] = SessionStreamSlots.new()
-	var container: SessionStreamSlots = session_stream_slots[session_id]
-
-	var slot: StreamSlot = container.slots.get(channel)
-	if slot == null or slot.entry != entry:
-		slot = StreamSlot.new()
-		slot.entry = entry
-		slot.rich_text = get_bubble_rich_text(session_id, entry)
-		if slot.rich_text == null:
-			slot.rich_text = append_entry_bubble(entry, session_id)
-		container.slots[channel] = slot
-	elif slot.rich_text != null:
-		chat_bubble_flusher.enqueue(slot.rich_text, slot.entry)
+	var rich_text := get_bubble_rich_text(session_id, entry)
+	if rich_text == null:
+		rich_text = append_entry_bubble(entry, session_id)
+	if rich_text != null:
+		chat_bubble_flusher.enqueue(rich_text, entry)
 	pass
 
 
 ## Scroll after ChatBubbleFlusher drains a batch (see AgentEvents.bubble_rich_text_flushed).
 func on_chat_bubble_flushed() -> void:
 	queue_scroll_to_bottom()
-	pass
-
-
-## Reattach stream slots after rebuild when switching back to a running session.
-func restore_session_stream_slots(session_id: int, session: AgentSession) -> void:
-	if session.run == null:
-		return
-	var container := SessionStreamSlots.new()
-	if session.run.step_thinking_entry != null:
-		var thinking_slot := StreamSlot.new()
-		thinking_slot.entry = session.run.step_thinking_entry
-		thinking_slot.rich_text = get_bubble_rich_text(session_id, session.run.step_thinking_entry)
-		container.slots["reasoning"] = thinking_slot
-	if session.run.step_agent_entry != null:
-		var agent_slot := StreamSlot.new()
-		agent_slot.entry = session.run.step_agent_entry
-		agent_slot.rich_text = get_bubble_rich_text(session_id, session.run.step_agent_entry)
-		container.slots["content"] = agent_slot
-	if not container.slots.is_empty():
-		session_stream_slots[session_id] = container
 	pass
 
 
@@ -228,11 +177,8 @@ func rebuild(session_id: int) -> void:
 
 
 func fill_list(session: AgentSession) -> void:
-	session_stream_slots.erase(session.id)
 	for entry: ChatEntry in session.chat_entries:
 		append_entry_bubble(entry, session.id)
-	if AgentSessionManager.is_running(session.id):
-		restore_session_stream_slots(session.id, session)
 	pass
 
 
