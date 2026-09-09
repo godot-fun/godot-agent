@@ -33,24 +33,18 @@ static func _static_init() -> void:
 
 
 # ---------------------------------------------------------------------------
-# Session registry — create, register, delete
+# Session registry — create, delete
 # ---------------------------------------------------------------------------
 
 static func create_session() -> AgentSession:
 	var session_id := next_session_id()
 	var session := AgentSession.new(session_id, StringUtils.format("New Chat {}", session_id))
-	register_session(session, true)
+	sessions[session.id] = session
+	AgentEvents.events.session_added.emit(session.id, session.title)
+	persist_session(session.id)
 	if active_session_id == INVALID_SESSION_ID:
 		select_session(session.id)
 	return session
-
-
-static func register_session(session: AgentSession, emit_added: bool) -> void:
-	sessions[session.id] = session
-	if emit_added:
-		AgentEvents.events.session_added.emit(session.id, session.title)
-		persist_session(session.id)
-	pass
 
 
 static func delete_session(session_id: int) -> void:
@@ -162,7 +156,7 @@ static func load_from_disk() -> void:
 
 	var all_sessions := AgentSessionStore.load_all_sessions()
 	for session: AgentSession in all_sessions:
-		register_session(session, false)
+		sessions[session.id] = session
 	select_first_or_create()
 	pass
 
