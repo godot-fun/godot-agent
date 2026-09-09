@@ -666,6 +666,7 @@ static func configure_rich_text_label(label: RichTextLabel, text_color: Color) -
 	label.selection_enabled = true
 	label.scroll_active = false
 	label.fit_content = true
+	label.clip_contents = false
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	label.add_theme_color_override("default_color", text_color)
