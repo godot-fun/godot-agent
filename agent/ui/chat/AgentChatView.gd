@@ -122,6 +122,8 @@ func on_markdown_changed(_enabled: bool) -> void:
 		match entry.kind:
 			ChatEntry.KIND_THINKING:
 				ThinkingBubble.refresh(rich_text, entry)
+			ChatEntry.KIND_RESULT:
+				ResultBubble.refresh(rich_text, entry)
 			ChatEntry.KIND_ERROR:
 				ErrorBubble.refresh(rich_text, entry)
 			_:
@@ -255,12 +257,12 @@ func append_entry_bubble(chat_entry: ChatEntry, session_id: int) -> RichTextLabe
 					tool_color
 			)
 		ChatEntry.KIND_RESULT:
-			if chat_entry.title.begins_with("exit_code:"):
-				var exit_code := int(StringUtils.substring_after(chat_entry.title, "exit_code:"))
-				var title_color: Color = AgentColors.chat_text_muted if exit_code == 0 else AgentColors.error
-				rich_text = append_bubble(chat_list, chat_entry, AgentColors.chat_text_muted, AgentColors.result_bubble, title_color)
-			else:
-				rich_text = append_bubble(chat_list, chat_entry, AgentColors.chat_text_muted, AgentColors.result_bubble)
+			rich_text = ResultBubble.append(
+					chat_list,
+					chat_entry,
+					build_bubble_style(AgentColors.result_bubble)
+			)
+			queue_scroll_to_bottom()
 		ChatEntry.KIND_ERROR:
 			rich_text = ErrorBubble.append(
 					chat_list,

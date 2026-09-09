@@ -248,10 +248,7 @@ static func on_tool_execution_end(session_id: int, _tool_call_id: String, tool_n
 		title = StringUtils.first_lines(result, 1)
 		body = StringUtils.first_lines_after(result, 1)
 		
-	var preview := StringUtils.last_lines(body, 3)
-	if preview.length() > 600:
-		preview = preview.substr(0, 600) + "\n…"
-	session.add_chat_entry(ChatEntry.KIND_RESULT, title, preview)
+	session.add_chat_entry(ChatEntry.KIND_RESULT, title, body)
 	pass
 
 
