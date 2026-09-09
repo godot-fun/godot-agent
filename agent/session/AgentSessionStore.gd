@@ -109,27 +109,18 @@ class SessionTitle:
 
 
 static func load_index() -> SessionIndex:
-	var session_index := read_index_file()
-	if session_index != null:
-		return session_index
-	return rebuild_index()
-
-
-static func read_index_file() -> SessionIndex:
 	var text := FileUtils.read_file_to_string(get_index_path())
-	if StringUtils.is_blank(text):
-		return null
-	var session_index: SessionIndex = JsonUtils.json_to_object(text, SessionIndex)
-	if session_index == null:
-		Log.error("agent chat index load failed, invalid json:[{}]", get_index_path())
-		return null
-	return session_index
+	if StringUtils.is_not_blank(text):
+		var session_index: SessionIndex = JsonUtils.json_to_object(text, SessionIndex)
+		if session_index != null:
+			return session_index
+	var sessions: Dictionary[int, AgentSession] = {}
+	for session: AgentSession in load_all_sessions():
+		sessions[session.id] = session
+	return save_index(sessions)
 
 
-static func save_index(sessions: Dictionary[int, AgentSession]) -> void:
-	if not ensure_chats_dir():
-		Log.error("agent chat save failed, cannot create dir:[{}]", get_chats_dir())
-		return
+static func save_index(sessions: Dictionary[int, AgentSession]) -> SessionIndex:
 	var session_index := SessionIndex.new()
 	for session_id: int in sessions:
 		var session: AgentSession = sessions[session_id]
@@ -139,15 +130,9 @@ static func save_index(sessions: Dictionary[int, AgentSession]) -> void:
 		session_title.id = session.id
 		session_title.title = session.title
 		session_index.index.append(session_title)
+	if not ensure_chats_dir():
+		Log.error("agent chat save failed, cannot create dir:[{}]", get_chats_dir())
+		return session_index
 	var json := JsonUtils.object_to_json(session_index)
 	FileUtils.write_string_to_file(get_index_path(), json)
-	pass
-
-
-static func rebuild_index() -> SessionIndex:
-	var sessions: Dictionary[int, AgentSession] = {}
-	for session: AgentSession in load_all_sessions():
-		sessions[session.id] = session
-	save_index(sessions)
-	var session_index := read_index_file()
 	return session_index
