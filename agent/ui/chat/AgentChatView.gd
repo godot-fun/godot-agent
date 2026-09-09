@@ -298,6 +298,7 @@ func append_bubble(chat_list: VBoxContainer, entry: ChatEntry, text_color: Color
 		0.0,
 		AgentColors.code_block_bg_html()
 	)
+	rich_text.visible = StringUtils.is_not_blank(entry.body)
 	vbox.add_child(rich_text)
 	wrapper.set_meta(META_BUBBLE_RICH_TEXT, rich_text)
 

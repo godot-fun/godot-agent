@@ -69,6 +69,7 @@ static func refresh_rich_text(rich_text: RichTextLabel, entry: ChatEntry, increm
 	if entry.kind == ChatEntry.KIND_THINKING:
 		ThinkingBubble.on_stream_delta(rich_text, entry)
 		return
+	rich_text.visible = StringUtils.is_not_blank(entry.body)
 	var markdown_enabled := MarkdownToggle.markdown_enabled_for_entry(entry)
 	if incremental and not markdown_enabled:
 		var cached := MarkdownUtils.get_raw_body_from_rich_text_label(rich_text)
