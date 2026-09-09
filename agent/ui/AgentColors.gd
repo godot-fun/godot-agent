@@ -38,6 +38,8 @@ static var assistant_bubble: Color
 static var system_bubble: Color
 static var thinking_bubble: Color
 static var tool_bubble: Color
+static var file_tool_bubble: Color
+static var file_tool_title: Color
 static var result_bubble: Color
 static var success: Color
 static var error: Color
@@ -85,6 +87,19 @@ static func code_block_bg_html() -> String:
 	return code_block_bg.to_html(false)
 
 
+## read / write / edit share one amber file-tool color; other tools stay green.
+static func is_file_tool(tool_name: String) -> bool:
+	return tool_name == ReadTool.NAME or tool_name == WriteTool.NAME or tool_name == EditTool.NAME
+
+
+static func tool_bubble_color(tool_name: String) -> Color:
+	return file_tool_bubble if is_file_tool(tool_name) else tool_bubble
+
+
+static func tool_title_color(tool_name: String) -> Color:
+	return file_tool_title if is_file_tool(tool_name) else success
+
+
 # ---------------------------------------------------------------------------
 # Dark palette
 # ---------------------------------------------------------------------------
@@ -116,6 +131,8 @@ static func apply_dark_palette() -> void:
 	system_bubble = Color(0.10, 0.13, 0.19)
 	thinking_bubble = Color(0.17, 0.13, 0.22)
 	tool_bubble = Color(0.14, 0.20, 0.16)
+	file_tool_bubble = Color(0.22, 0.16, 0.10)
+	file_tool_title = Color(0.95, 0.72, 0.38)
 	result_bubble = Color(0.13, 0.16, 0.20)
 	success = Color(0.30, 0.78, 0.45)
 	error = Color(0.85, 0.30, 0.30)
@@ -155,6 +172,8 @@ static func apply_light_palette() -> void:
 	system_bubble = Color("#F4F4F5")
 	thinking_bubble = Color("#F5F3FF")
 	tool_bubble = Color("#F0FDF4")
+	file_tool_bubble = Color("#FFF7ED")
+	file_tool_title = Color("#EA580C")
 	result_bubble = Color("#F4F4F5")
 	success = Color("#16A34A")
 	error = Color("#DC2626")

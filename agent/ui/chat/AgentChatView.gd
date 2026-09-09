@@ -246,7 +246,14 @@ func append_entry_bubble(chat_entry: ChatEntry, session_id: int) -> RichTextLabe
 		ChatEntry.KIND_AGENT:
 			rich_text = append_bubble(chat_list, chat_entry, AgentColors.chat_text, AgentColors.assistant_bubble)
 		ChatEntry.KIND_TOOL:
-			rich_text = append_bubble(chat_list, chat_entry, AgentColors.success, AgentColors.tool_bubble)
+			var tool_color := AgentColors.tool_title_color(chat_entry.title)
+			rich_text = append_bubble(
+					chat_list,
+					chat_entry,
+					tool_color,
+					AgentColors.tool_bubble_color(chat_entry.title),
+					tool_color
+			)
 		ChatEntry.KIND_RESULT:
 			if chat_entry.title.begins_with("exit_code:"):
 				var exit_code := int(StringUtils.substring_after(chat_entry.title, "exit_code:"))
