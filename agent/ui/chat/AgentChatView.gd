@@ -366,9 +366,21 @@ func on_chat_scroll_gui_input(event: InputEvent) -> void:
 			return
 		if mouse.button_index == MOUSE_BUTTON_WHEEL_UP:
 			stick_to_bottom = false
+		elif mouse.button_index == MOUSE_BUTTON_WHEEL_DOWN and is_scrolled_to_bottom():
+			# Wheel scrolled all the way down — re-enable follow so new
+			# content automatically keeps the transcript at the bottom.
+			stick_to_bottom = true
 	elif event is InputEventPanGesture:
-		stick_to_bottom = false
+		stick_to_bottom = is_scrolled_to_bottom()
 	pass
+
+
+## True when the transcript is already scrolled to (or within a pixel of) the bottom edge.
+func is_scrolled_to_bottom() -> bool:
+	var vbar := chat_scroll.get_v_scroll_bar()
+	if vbar == null:
+		return true
+	return vbar.value >= vbar.max_value - vbar.page - 1.0
 
 
 func queue_scroll_to_bottom() -> void:
