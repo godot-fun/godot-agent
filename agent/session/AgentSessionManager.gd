@@ -56,7 +56,7 @@ static func delete_session(session_id: int) -> void:
 		session.request_stop()
 
 	sessions.erase(session_id)
-	AgentSessionStore.delete_session_file(session_id)
+	AgentSessionStore.delete_session_file(session_id, sessions)
 	AgentEvents.events.session_removed.emit(session_id)
 
 	if active_session_id == session_id:
@@ -84,8 +84,6 @@ static func select_session(session_id: int) -> void:
 	if session.messages.is_empty():
 		var loaded_session := AgentSessionStore.load_session(session_id)
 		sessions[session_id] = loaded_session
-		AgentSessionStore.upsert_index(loaded_session.id, loaded_session.title)
-	
 	active_session_id = session_id
 	AgentEvents.events.session_selected.emit(session_id)
 
@@ -175,7 +173,7 @@ static func persist_session(session_id: int) -> void:
 		return
 	if session.messages.is_empty():
 		return
-	AgentSessionStore.save_session(session)
+	AgentSessionStore.save_session(session_id, sessions)
 	pass
 
 

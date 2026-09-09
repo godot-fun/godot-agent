@@ -36,24 +36,23 @@ static func ensure_chats_dir() -> bool:
 # Save
 # ---------------------------------------------------------------------------
 
-static func save_session(session: AgentSession) -> void:
-	if session == null or session.id < 0:
-		return
+static func save_session(session_id: int, sessions: Dictionary[int, AgentSession]) -> void:
+	var session: AgentSession = sessions.get(session_id)
 	if not ensure_chats_dir():
 		Log.error("agent chat save failed, cannot create dir:[{}]", get_chats_dir())
 		return
 	var json := JsonUtils.object_to_json(session)
 	FileUtils.write_string_to_file(get_session_path(session.id), json)
-	upsert_index(session.id, session.title)
+	save_index(sessions)
 	pass
 
 
-static func delete_session_file(session_id: int) -> void:
+static func delete_session_file(session_id: int, sessions: Dictionary[int, AgentSession]) -> void:
 	if session_id < 0:
 		return
 	var path := get_session_path(session_id)
 	FileUtils.delete_file(path)
-	remove_index(session_id)
+	save_index(sessions)
 	pass
 
 
@@ -127,51 +126,28 @@ static func read_index_file() -> SessionIndex:
 	return session_index
 
 
-static func save_index(session_index: SessionIndex) -> void:
-	if session_index == null:
-		return
+static func save_index(sessions: Dictionary[int, AgentSession]) -> void:
 	if not ensure_chats_dir():
 		Log.error("agent chat save failed, cannot create dir:[{}]", get_chats_dir())
 		return
+	var session_index := SessionIndex.new()
+	for session_id: int in sessions:
+		var session: AgentSession = sessions[session_id]
+		if session == null:
+			continue
+		var session_title := SessionTitle.new()
+		session_title.id = session.id
+		session_title.title = session.title
+		session_index.index.append(session_title)
 	var json := JsonUtils.object_to_json(session_index)
 	FileUtils.write_string_to_file(get_index_path(), json)
 	pass
 
 
-static func upsert_index(session_id: int, title: String) -> void:
-	var session_index := read_index_file()
-	var found := false
-	for session_title: SessionTitle in session_index.index:
-		if session_title.id == session_id:
-			session_title.title = title
-			found = true
-			break
-	if not found:
-		var session_title := SessionTitle.new()
-		session_title.id = session_id
-		session_title.title = title
-		session_index.index.insert(0, session_title)
-	save_index(session_index)
-	pass
-
-
-static func remove_index(session_id: int) -> void:
-	var session_index := read_index_file()
-	if session_index == null:
-		return
-	for i in range(session_index.index.size() - 1, -1, -1):
-		if session_index.index[i].id == session_id:
-			session_index.index.remove_at(i)
-	save_index(session_index)
-	pass
-
-
 static func rebuild_index() -> SessionIndex:
-	var session_index := SessionIndex.new()
+	var sessions: Dictionary[int, AgentSession] = {}
 	for session: AgentSession in load_all_sessions():
-		var session_title := SessionTitle.new()
-		session_title.id = session.id
-		session_title.title = session.title
-		session_index.index.append(session_title)
-	save_index(session_index)
+		sessions[session.id] = session
+	save_index(sessions)
+	var session_index := read_index_file()
 	return session_index
