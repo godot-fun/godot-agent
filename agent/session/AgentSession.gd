@@ -26,6 +26,10 @@ class RunState:
 func _init(_id: int = -1, _title: String = "New Chat") -> void:
 	id = _id
 	title = _title
+	pass
+
+
+func setup_new_chat() -> void:
 	var system_text := SystemPrompt.build()
 	messages.append(ChatMessage.system(system_text))
 	add_chat_entry(ChatEntry.KIND_SYSTEM, ChatEntry.TITLE_SYSTEM, system_text)

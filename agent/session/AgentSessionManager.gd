@@ -39,6 +39,7 @@ static func _static_init() -> void:
 static func create_session() -> AgentSession:
 	var session_id := next_session_id()
 	var session := AgentSession.new(session_id, StringUtils.format("New Chat {}", session_id))
+	session.setup_new_chat()
 	sessions[session.id] = session
 	AgentEvents.events.session_added.emit(session.id, session.title)
 	persist_session(session.id)
@@ -78,6 +79,13 @@ static func next_session_id() -> int:
 static func select_session(session_id: int) -> void:
 	if not sessions.has(session_id):
 		return
+	# load session file with messages from disk
+	var session := get_session(session_id)
+	if session.messages.is_empty():
+		var loaded_session := AgentSessionStore.load_session(session_id)
+		sessions[session_id] = loaded_session
+		AgentSessionStore.upsert_index(loaded_session.id, loaded_session.title)
+	
 	active_session_id = session_id
 	AgentEvents.events.session_selected.emit(session_id)
 
@@ -154,9 +162,9 @@ static func load_from_disk() -> void:
 	sessions.clear()
 	active_session_id = INVALID_SESSION_ID
 
-	var all_sessions := AgentSessionStore.load_all_sessions()
-	for session: AgentSession in all_sessions:
-		sessions[session.id] = session
+	var session_index := AgentSessionStore.load_index()
+	for session_title: AgentSessionStore.SessionTitle in session_index.index:
+		sessions[session_title.id] = AgentSession.new(session_title.id, session_title.title)
 	select_first_or_create()
 	pass
 
@@ -164,6 +172,8 @@ static func load_from_disk() -> void:
 static func persist_session(session_id: int) -> void:
 	var session := get_session(session_id)
 	if session == null:
+		return
+	if session.messages.is_empty():
 		return
 	AgentSessionStore.save_session(session)
 	pass

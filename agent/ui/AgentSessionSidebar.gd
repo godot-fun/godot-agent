@@ -97,6 +97,7 @@ func refresh_item(session_id: int) -> void:
 
 
 func select_item(session_id: int) -> void:
+	refresh_item(session_id)
 	for row_session_id: int in session_rows:
 		style_session_row(row_session_id, row_session_id == session_id)
 	pass
