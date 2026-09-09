@@ -32,7 +32,7 @@ static func append(
 
 	var rich_text := MarkdownUtils.create_rich_text_label(
 			AgentColors.error,
-			StringUtils.truncate_lines(entry.body, MAX_LINES),
+			StringUtils.first_lines(entry.body, MAX_LINES),
 			MarkdownToggle.markdown_enabled,
 			0.0,
 			AgentColors.code_block_bg_html()
@@ -57,7 +57,7 @@ static func append(
 static func refresh(rich_text: RichTextLabel, entry: ChatEntry) -> void:
 	if entry == null:
 		return
-	var display := StringUtils.truncate_lines(entry.body, MAX_LINES)
+	var display := StringUtils.first_lines(entry.body, MAX_LINES)
 	MarkdownUtils.set_rich_text_label_text(rich_text, display, MarkdownToggle.markdown_enabled, 0.0, AgentColors.code_block_bg_html())
 	pass
 

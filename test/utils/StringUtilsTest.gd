@@ -58,13 +58,23 @@ func truncate_test() -> void:
 	assert(StringUtils.truncate("", 5) == StringUtils.EMPTY)
 	pass
 
-func truncate_lines_test() -> void:
-	assert(StringUtils.truncate_lines("a\nb\nc", 2) == "a\nb")
-	assert(StringUtils.truncate_lines("a\nb", 3) == "a\nb")
-	assert(StringUtils.truncate_lines("a\nb\nc", 0) == StringUtils.EMPTY)
-	assert(StringUtils.truncate_lines("", 5) == StringUtils.EMPTY)
-	assert(StringUtils.truncate_lines("single line", 28) == "single line")
-	assert(StringUtils.truncate_lines("a\nb\n", 2) == "a\nb")
+func first_lines_test() -> void:
+	assert(StringUtils.first_lines("a\nb\nc", 2) == "a\nb")
+	assert(StringUtils.first_lines("a\nb", 3) == "a\nb")
+	assert(StringUtils.first_lines("a\nb\nc", 0) == StringUtils.EMPTY)
+	assert(StringUtils.first_lines("", 5) == StringUtils.EMPTY)
+	assert(StringUtils.first_lines("single line", 28) == "single line")
+	assert(StringUtils.first_lines("a\nb\n", 2) == "a\nb")
+	pass
+
+func first_lines_after_test() -> void:
+	assert(StringUtils.first_lines_after("a\nb\nc", 2) == "c")
+	assert(StringUtils.first_lines_after("a\nb", 3) == StringUtils.EMPTY)
+	assert(StringUtils.first_lines_after("a\nb\nc", 0) == "a\nb\nc")
+	assert(StringUtils.first_lines_after("", 5) == StringUtils.EMPTY)
+	assert(StringUtils.first_lines_after("single line", 1) == StringUtils.EMPTY)
+	assert(StringUtils.first_lines_after("a\nb\n", 2) == StringUtils.EMPTY)
+	assert(StringUtils.first_lines_after("a\nb\nc\n", 2) == "c\n")
 	pass
 
 func last_lines_test() -> void:

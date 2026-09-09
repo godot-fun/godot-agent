@@ -127,9 +127,9 @@ static func truncate(s: String, max_length: int) -> String:
 	return s.substr(0, max_length - ELLIPSIS.length()) + ELLIPSIS
 
 
-## Returns s with at most max_lines lines; excess lines are dropped with no ellipsis.
-## Example: truncate_lines("a\nb\nc", 2) -> "a\nb"; truncate_lines("a\nb", 3) -> "a\nb"
-static func truncate_lines(s: String, max_lines: int) -> String:
+## Returns the first max_lines lines of s; later lines are dropped with no ellipsis.
+## Example: first_lines("a\nb\nc", 2) -> "a\nb"; first_lines("a\nb", 3) -> "a\nb"
+static func first_lines(s: String, max_lines: int) -> String:
 	if max_lines <= 0:
 		return EMPTY
 	if is_empty(s):
@@ -143,6 +143,24 @@ static func truncate_lines(s: String, max_lines: int) -> String:
 			return s
 		pos = idx + 1
 	return s.substr(0, pos - 1)
+
+
+## Returns the text after the first max_lines lines; returns EMPTY when s has at most max_lines lines.
+## Example: first_lines_after("a\nb\nc", 2) -> "c"; first_lines_after("a\nb", 3) -> ""
+static func first_lines_after(s: String, max_lines: int) -> String:
+	if max_lines <= 0:
+		return s
+	if is_empty(s):
+		return s
+	if s.count("\n") < max_lines:
+		return EMPTY
+	var pos := 0
+	for _n in max_lines:
+		var idx := s.find("\n", pos)
+		if idx == -1:
+			return EMPTY
+		pos = idx + 1
+	return s.substr(pos)
 
 
 ## Returns the last max_lines lines of s; earlier lines are dropped with no ellipsis.

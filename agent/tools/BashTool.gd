@@ -23,7 +23,6 @@ func async_execute(args: Dictionary[String, String]) -> String:
 	var result := await OSUtils.async_execute(argv, false)
 	var build := StringBuilder.new()
 	build.append_line(StringUtils.format("exit_code: {}", result.exit_code))
-	build.append_line(StringUtils.format("cwd: {}", AgentWorkspace.get_root()))
 	build.append(StringUtils.truncate(result.output.build_string(), MAX_OUTPUT))
 	return build.build_string()
 # AgentTool-Interface-Implement-End

@@ -226,40 +226,45 @@ func get_active_chat_list() -> VBoxContainer:
 # Bubbles
 # ---------------------------------------------------------------------------
 
-func append_entry_bubble(entry: ChatEntry, session_id: int) -> RichTextLabel:
+func append_entry_bubble(chat_entry: ChatEntry, session_id: int) -> RichTextLabel:
 	var chat_list: VBoxContainer = chat_list_caches.get(session_id)
 	if chat_list == null:
 		return null
 	var rich_text: RichTextLabel = null
-	match entry.kind:
+	match chat_entry.kind:
 		ChatEntry.KIND_SYSTEM:
-			rich_text = append_bubble(chat_list, entry, AgentColors.chat_text_muted, AgentColors.system_bubble, AgentColors.system_title)
+			rich_text = append_bubble(chat_list, chat_entry, AgentColors.chat_text_muted, AgentColors.system_bubble, AgentColors.system_title)
 		ChatEntry.KIND_USER:
-			rich_text = append_bubble(chat_list, entry, AgentColors.chat_text, AgentColors.user_bubble)
+			rich_text = append_bubble(chat_list, chat_entry, AgentColors.chat_text, AgentColors.user_bubble)
 		ChatEntry.KIND_THINKING:
 			rich_text = ThinkingBubble.append(
 					chat_list,
-					entry,
+					chat_entry,
 					build_bubble_style(AgentColors.thinking_bubble)
 			)
 			queue_scroll_to_bottom()
 		ChatEntry.KIND_AGENT:
-			rich_text = append_bubble(chat_list, entry, AgentColors.chat_text, AgentColors.assistant_bubble)
+			rich_text = append_bubble(chat_list, chat_entry, AgentColors.chat_text, AgentColors.assistant_bubble)
 		ChatEntry.KIND_TOOL:
-			rich_text = append_bubble(chat_list, entry, AgentColors.success, AgentColors.tool_bubble)
+			rich_text = append_bubble(chat_list, chat_entry, AgentColors.success, AgentColors.tool_bubble)
 		ChatEntry.KIND_RESULT:
-			rich_text = append_bubble(chat_list, entry, AgentColors.chat_text_muted, AgentColors.result_bubble)
+			if chat_entry.title.begins_with("exit_code:"):
+				var exit_code := int(StringUtils.substring_after(chat_entry.title, "exit_code:"))
+				var title_color: Color = AgentColors.chat_text_muted if exit_code == 0 else AgentColors.error
+				rich_text = append_bubble(chat_list, chat_entry, AgentColors.chat_text_muted, AgentColors.result_bubble, title_color)
+			else:
+				rich_text = append_bubble(chat_list, chat_entry, AgentColors.chat_text_muted, AgentColors.result_bubble)
 		ChatEntry.KIND_ERROR:
 			rich_text = ErrorBubble.append(
 					chat_list,
-					entry,
+					chat_entry,
 					build_bubble_style(AgentColors.panel),
 					session_id,
 					AgentSessionManager.is_running(session_id)
 			)
 			queue_scroll_to_bottom()
 		_:
-			rich_text = append_bubble(chat_list, entry, AgentColors.chat_text_muted, AgentColors.panel)
+			rich_text = append_bubble(chat_list, chat_entry, AgentColors.chat_text_muted, AgentColors.panel)
 	return rich_text
 
 
