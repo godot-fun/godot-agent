@@ -8,7 +8,7 @@ Never use default python or host python/py.
 
 Usage
 -----
-    .dependency/index-tts/.venv/Scripts/python.exe .ai/ai-text-to-speech/tts.py --voice audio/voice/ref.wav --text "你好"
+    .dependency/index-tts/.venv/Scripts/python.exe .ai/ai-text-to-speech/tts.py --voice audio/voice/ref.wav --text "Hello"
     .dependency/index-tts/.venv/Scripts/python.exe .ai/ai-text-to-speech/tts.py --voice audio/voice/ref.wav --text-file script.txt --output audio/voice/ai-text-to-speech/line.wav
     .dependency/index-tts/.venv/Scripts/python.exe .ai/ai-text-to-speech/tts.py --voice audio/voice/ref.wav --text "Hello" --output audio/voice/ai-text-to-speech
 """

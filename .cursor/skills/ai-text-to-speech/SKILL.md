@@ -3,7 +3,7 @@ name: ai-text-to-speech
 description: >-
   Zero-shot text-to-speech with voice cloning via IndexTTS2 (index-tts).
   Synthesizes speech from text using a user-provided reference audio for timbre.
-  Use when the user wants TTS, text-to-speech, ?????? voice clone, ????,
+  Use when the user wants TTS, text-to-speech, voice cloning, voice clone,
   IndexTTS, IndexTTS2, or generating narration/voice lines from a reference WAV.
 ---
 
@@ -13,10 +13,10 @@ Clone a speaker from a **reference audio**, then synthesize speech from **text**
 
 ## Rules
 
-When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) ??run scripts as documented, install missing tools into `.dependency/`.
+When this skill applies, read and follow [skill-dependency-manager](../skill-dependency-manager.md) — run scripts as documented, install missing tools into `.dependency/`.
 
 - Run `tts.py` at `.ai/ai-text-to-speech/tts.py` through the **`index-tts` manifest entry** (`.dependency/index-tts/.venv/`). Never use host `python`, `py`, `python3`, or any interpreter outside `.dependency/`.
-- Do not hand-write IndexTTS Python snippets or `uv run webui.py` for synthesis ??use the bundled script.
+- Do not hand-write IndexTTS Python snippets or `uv run webui.py` for synthesis — use the bundled script.
 - IndexTTS **requires `uv`** for install (`pip`/`conda` are unsupported upstream). Python must be **`>=3.10,<3.12`** (use **`python-3.11`**).
 - `populated: false` for `index-tts` (or missing models) is not a reason to skip. Install / download first, set `populated: true`, retry the same command.
 - **Never overwrite sources.** Pass the user's real voice path and text; write only to `-o` / `--output`.
@@ -97,13 +97,13 @@ Use `.dependency/index-tts/.venv/bin/python` on Unix. Confirm `checkpoints/confi
 
 ## Quick Start
 
-**Voice reference + text ??WAV** (default output: `<voice-dir>/ai-text-to-speech/<voice-stem>.wav`):
+**Voice reference + text → WAV** (default output: `<voice-dir>/ai-text-to-speech/<voice-stem>.wav`):
 
 ```bash
 .dependency/index-tts/.venv/Scripts/python.exe .ai/ai-text-to-speech/tts.py \
   --voice audio/voice/ref.wav \
-  --text "?????????????
-# ??audio/voice/ai-text-to-speech/ref.wav
+  --text "Hello, welcome to this world."
+# → audio/voice/ai-text-to-speech/ref.wav
 ```
 
 Explicit output path:
@@ -135,7 +135,7 @@ FP16 (faster, less VRAM):
 ```bash
 .dependency/index-tts/.venv/Scripts/python.exe .ai/ai-text-to-speech/tts.py \
   --voice audio/voice/ref.wav \
-  --text "????????? \
+  --text "Testing half-precision inference." \
   --fp16
 ```
 
@@ -144,8 +144,8 @@ FP16 (faster, less VRAM):
 | Mode | Flags | Notes |
 |------|-------|-------|
 | Emotion reference audio | `--emotion-audio path.wav` | Separate clip for emotion; timbre still from `--voice` |
-| Emotion weight | `--emotion-weight 0.6` | Maps to `emo_alpha` (`0.0`?`1.0`, default `1.0`) |
-| Emotion from text | `--emotion-from-text` | Infer emotion from synthesis text; prefer `--emotion-weight` ??`0.6` |
+| Emotion weight | `--emotion-weight 0.6` | Maps to `emo_alpha` (`0.0`–`1.0`, default `1.0`) |
+| Emotion from text | `--emotion-from-text` | Infer emotion from synthesis text; prefer `--emotion-weight` ≈ `0.6` |
 | Emotion description | `--emotion-text "..."` | Natural-language emotion; implies text emotion mode |
 | Emotion vector | `--emotion-vector 0,0,0.8,0,0,0,0,0` | 8 floats: happy, angry, sad, afraid, disgusted, melancholic, surprised, calm |
 
@@ -155,19 +155,19 @@ FP16 (faster, less VRAM):
   --voice audio/voice/ref.wav \
   --emotion-audio audio/voice/emo_sad.wav \
   --emotion-weight 0.9 \
-  --text "????????????????? \
+  --text "The inn has gone rotten and started auctioning off rooms." \
   --output audio/voice/ai-text-to-speech/sad_line.wav
 
 # Emotion description text
 .dependency/index-tts/.venv/Scripts/python.exe .ai/ai-text-to-speech/tts.py \
   --voice audio/voice/ref.wav \
-  --emotion-text "?????? \
+  --emotion-text "afraid, tense" \
   --emotion-weight 0.6 \
-  --text "???????????? \
+  --text "Hide quickly! He is coming!" \
   --output audio/voice/ai-text-to-speech/afraid_line.wav
 ```
 
-Do not combine `--emotion-audio`, `--emotion-vector`, and `--emotion-text` / `--emotion-from-text` in conflicting ways ??pick one emotion source.
+Do not combine `--emotion-audio`, `--emotion-vector`, and `--emotion-text` / `--emotion-from-text` in conflicting ways — pick one emotion source.
 
 ## Defaults
 
@@ -181,13 +181,13 @@ Do not combine `--emotion-audio`, `--emotion-vector`, and `--emotion-text` / `--
 
 ## Agent workflow
 
-1. **Confirm inputs** ??need a clear reference voice WAV/MP3 and the text (or `--text-file`). Ask if either is missing.
-2. **Use the user's real paths** ??do not copy voice files into the repo unless asked.
-3. **Trial first** ??synthesize one short line, play/inspect before long scripts.
-4. **Reference audio tips** ??clean, single-speaker, little noise; a few seconds of clear speech works best.
-5. **Missing install** ??follow **Setup**; register `index-tts` in `manifest.json`; retry the same command.
-6. **GPU** ??prefer CUDA + `--fp16` for speed; CPU is acceptable for short tests only.
-7. **Revert** ??delete files under `ai-text-to-speech/`; sources are never modified.
+1. **Confirm inputs** — need a clear reference voice WAV/MP3 and the text (or `--text-file`). Ask if either is missing.
+2. **Use the user's real paths** — do not copy voice files into the repo unless asked.
+3. **Trial first** — synthesize one short line, play/inspect before long scripts.
+4. **Reference audio tips** — clean, single-speaker, little noise; a few seconds of clear speech works best.
+5. **Missing install** — follow **Setup**; register `index-tts` in `manifest.json`; retry the same command.
+6. **GPU** — prefer CUDA + `--fp16` for speed; CPU is acceptable for short tests only.
+7. **Revert** — delete files under `ai-text-to-speech/`; sources are never modified.
 
 ## Troubleshooting
 
@@ -200,7 +200,6 @@ Do not combine `--emotion-audio`, `--emotion-vector`, and `--emotion-text` / `--
 | Slow HuggingFace | Set `HF_ENDPOINT=https://hf-mirror.com`; or use ModelScope |
 | `uv sync` / DeepSpeed fail on Windows | Use `uv sync --extra webui` without deepspeed |
 | Unnatural emotion | Lower `--emotion-weight` to ~0.6; try a clearer `--emotion-audio` |
-
 
 ## CLI
 
