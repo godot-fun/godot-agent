@@ -2,7 +2,7 @@ class_name ThinkingBubble
 extends Object
 
 ## Thinking / reasoning bubble — plain text preview (six lines) in chat.
-## Full text lives on ChatEntry.body; a header button opens a popup for the full view.
+## Full text lives on ChatEntry.body; the header ··· button opens it in AgentTextPopup.
 
 const PREVIEW_LINES := 6
 
@@ -34,7 +34,7 @@ static func append(
 	var view_button := Button.new()
 	view_button.text = "···"
 	style_view_button(view_button)
-	view_button.pressed.connect(open_full_view.bind(entry, wrapper))
+	view_button.pressed.connect(AgentTextPopup.open_entry.bind(entry, wrapper))
 	header.add_child(view_button)
 
 	var line_label := Label.new()
@@ -121,59 +121,4 @@ static func style_view_button(button: Button) -> void:
 	button.add_theme_stylebox_override("pressed", pressed)
 	button.add_theme_stylebox_override("focus", hover.duplicate())
 	button.add_theme_stylebox_override("disabled", normal.duplicate())
-	pass
-
-
-static func open_full_view(entry: ChatEntry, anchor: Control) -> void:
-	if entry == null or anchor == null or not is_instance_valid(anchor):
-		return
-	var tree := anchor.get_tree()
-	if tree == null:
-		return
-
-	var window := Window.new()
-	window.title = entry.title if not StringUtils.is_blank(entry.title) else "Thinking"
-	window.transient = true
-	window.min_size = Vector2i(840, 520)
-
-	var text := TextEdit.new()
-	text.text = entry.body
-	text.editable = false
-	text.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
-	text.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	text.offset_left = 12
-	text.offset_top = 12
-	text.offset_right = -12
-	text.offset_bottom = -12
-	text.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	text.grow_vertical = Control.GROW_DIRECTION_BOTH
-	text.add_theme_font_override("font", Fonts.regular())
-	text.add_theme_color_override("font_color", AgentColors.chat_text_muted)
-	window.add_child(text)
-
-	window.close_requested.connect(func() -> void: window.queue_free())
-	window.window_input.connect(on_full_view_input.bind(window))
-
-	tree.root.add_child(window)
-	var viewport_size := anchor.get_viewport().get_visible_rect().size
-	const EDGE_MARGIN := 64
-	var max_w := int(viewport_size.x) - EDGE_MARGIN * 2
-	var max_h := int(viewport_size.y) - EDGE_MARGIN * 2
-	window.size = Vector2i(
-		clampi(int(viewport_size.x * 0.76), window.min_size.x, max_w),
-		clampi(int(viewport_size.y * 0.78), window.min_size.y, max_h),
-	)
-	window.popup_centered()
-	text.set_caret_line(maxi(text.get_line_count() - 1, 0))
-	pass
-
-
-static func on_full_view_input(event: InputEvent, window: Window) -> void:
-	if not is_instance_valid(window):
-		return
-	if event is InputEventKey:
-		var key := event as InputEventKey
-		if key.pressed and not key.echo and key.keycode == KEY_ESCAPE:
-			window.queue_free()
-			window.set_input_as_handled()
 	pass

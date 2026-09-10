@@ -21,8 +21,6 @@ extends Control
 @onready var log_button: Button = $Root/Toolbar/ToolbarRow/LogButtonWrap/LogButton
 @onready var theme_toggle_button: Button = $Root/Toolbar/ToolbarRow/ThemeToggleWrap/ThemeToggleButton
 @onready var workspace_dialog: FileDialog = $WorkspaceDialog
-@onready var log_output: TextEdit = $LogWindow/LogOutput
-@onready var log_window: Window = $LogWindow
 
 var toolbar: AgentToolbar = AgentToolbar.new()
 var chat_area: ChatArea = ChatArea.new()
@@ -44,7 +42,8 @@ func _ready() -> void:
 
 	chat_input.setup(input_bar, input_wrap, input_inner, input_field, send_button)
 	theme_toggle.setup(theme_toggle_button)
-	log_panel.setup(log_button, log_window, log_output)
+	# Log window is created in code (AgentTextPopup), not as a scene node.
+	log_panel.setup(log_button, self)
 
 	AgentSessionManager.load_from_disk()
 	session_sidebar.rebuild()

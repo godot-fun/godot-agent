@@ -2,7 +2,7 @@ class_name ResultBubble
 extends Object
 
 ## Result bubble — plain text preview (six lines) in chat.
-## Full text lives on ChatEntry.body; a header button opens a popup for the full view.
+## Full text lives on ChatEntry.body; the header ··· button opens it in AgentTextPopup.
 
 const PREVIEW_LINES := 6
 
@@ -34,7 +34,7 @@ static func append(
 	var view_button := Button.new()
 	view_button.text = "···"
 	style_view_button(view_button)
-	view_button.pressed.connect(ThinkingBubble.open_full_view.bind(entry, wrapper))
+	view_button.pressed.connect(AgentTextPopup.open_entry.bind(entry, wrapper))
 	header.add_child(view_button)
 
 	var line_label := Label.new()
