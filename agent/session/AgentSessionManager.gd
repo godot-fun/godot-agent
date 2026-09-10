@@ -161,8 +161,8 @@ static func load_from_disk() -> void:
 	active_session_id = INVALID_SESSION_ID
 
 	var session_index := AgentSessionStore.load_index()
-	for session_title: AgentSessionStore.SessionTitle in session_index.index:
-		sessions[session_title.id] = AgentSession.new(session_title.id, session_title.title)
+	for session_summary: AgentSessionStore.SessionSummary in session_index.index:
+		sessions[session_summary.id] = AgentSession.new(session_summary.id, session_summary.title)
 	select_first_or_create()
 	pass
 

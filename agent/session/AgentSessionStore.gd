@@ -101,11 +101,12 @@ static func load_session_file(file_path: String) -> AgentSession:
 # Session Index
 # ---------------------------------------------------------------------------
 class SessionIndex:
-	var index: Array[SessionTitle] = []
+	var index: Array[SessionSummary] = []
 
-class SessionTitle:
+class SessionSummary:
 	var id: int = -1
 	var title: String = ""
+	var order: int = 0
 
 
 static func load_index() -> SessionIndex:
@@ -126,10 +127,10 @@ static func save_index(sessions: Dictionary[int, AgentSession]) -> SessionIndex:
 		var session: AgentSession = sessions[session_id]
 		if session == null:
 			continue
-		var session_title := SessionTitle.new()
-		session_title.id = session.id
-		session_title.title = session.title
-		session_index.index.append(session_title)
+		var session_summary := SessionSummary.new()
+		session_summary.id = session.id
+		session_summary.title = session.title
+		session_index.index.append(session_summary)
 	if not ensure_chats_dir():
 		Log.error("agent chat save failed, cannot create dir:[{}]", get_chats_dir())
 		return session_index
