@@ -155,20 +155,15 @@ static func remove_index(session_id: int) -> void:
 	pass
 
 
-## Replace index order with ordered_ids (sidebar drag). Ids must match the current set.
-static func reorder_sessions(ordered_ids: Array[int]) -> void:
-	if ordered_ids.size() != session_indexes.indexes.size():
+static func move_index(session_id: int, to_index: int) -> void:
+	for i in session_indexes.indexes.size():
+		if session_indexes.indexes[i].id != session_id:
+			continue
+		var session_index := session_indexes.indexes[i]
+		session_indexes.indexes.remove_at(i)
+		session_indexes.indexes.insert(clampi(to_index, 0, session_indexes.indexes.size()), session_index)
+		AgentSessionIndexes.save_index(session_indexes)
 		return
-	var by_id: Dictionary[int, AgentSessionIndexes.SessionIndex] = {}
-	for session_index: AgentSessionIndexes.SessionIndex in session_indexes.indexes:
-		by_id[session_index.id] = session_index
-	var reordered: Array[AgentSessionIndexes.SessionIndex] = []
-	for session_id: int in ordered_ids:
-		if not by_id.has(session_id):
-			return
-		reordered.append(by_id[session_id])
-	session_indexes.indexes = reordered
-	AgentSessionIndexes.save_index(session_indexes)
 	pass
 
 
