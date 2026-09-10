@@ -31,6 +31,7 @@ func setup(
 	chat_bubble_flusher.setup()
 	chat_scroll.gui_input.connect(on_chat_scroll_gui_input)
 	AgentEvents.events.markdown_changed.connect(on_markdown_changed)
+	AgentEvents.events.skill_context_changed.connect(on_skill_context_changed)
 	AgentEvents.events.theme_changed.connect(on_theme_changed)
 	AgentEvents.events.session_selected.connect(on_session_selected)
 	AgentEvents.events.session_removed.connect(on_session_removed)
@@ -53,7 +54,7 @@ func on_session_selected(session_id: int) -> void:
 
 
 func on_session_removed(session_id: int) -> void:
-	drop_list(session_id)
+	clear_bubble_list(session_id)
 	pass
 
 
@@ -111,6 +112,13 @@ func on_chat_bubble_flushed() -> void:
 # ---------------------------------------------------------------------------
 
 ## Re-render every bubble body after Markdown toggle changes.
+func on_skill_context_changed(session_id: int) -> void:
+	clear_bubble_list(session_id)
+	if AgentSessionManager.is_active(session_id):
+		show_session(session_id)
+	pass
+
+
 func on_markdown_changed(_enabled: bool) -> void:
 	var session := AgentSessionStore.load_session(AgentSessionManager.active_session_id)
 	if session == null:
@@ -126,7 +134,7 @@ func on_markdown_changed(_enabled: bool) -> void:
 				ErrorBubble.refresh(rich_text, entry)
 			_:
 				ChatBubbleFlusher.refresh_rich_text(rich_text, entry)
-	drop_inactive_lists()
+	clear_inactive_bubble_lists()
 	pass
 
 
@@ -171,7 +179,7 @@ func show_session(session_id: int) -> void:
 
 
 func rebuild(session_id: int) -> void:
-	drop_all_lists()
+	clear_all_bubble_lists()
 	show_session(session_id)
 	pass
 
@@ -191,7 +199,7 @@ func sync_new_entries(session: AgentSession) -> void:
 	pass
 
 
-func drop_list(session_id: int) -> void:
+func clear_bubble_list(session_id: int) -> void:
 	var list: VBoxContainer = chat_list_caches.get(session_id)
 	if list == null:
 		return
@@ -200,21 +208,21 @@ func drop_list(session_id: int) -> void:
 	pass
 
 
-func drop_inactive_lists() -> void:
+func clear_inactive_bubble_lists() -> void:
 	var drop_ids: Array[int] = []
 	for session_id: int in chat_list_caches:
 		if session_id != AgentSessionManager.active_session_id:
 			drop_ids.append(session_id)
 	for session_id: int in drop_ids:
-		drop_list(session_id)
+		clear_bubble_list(session_id)
 	pass
 
 
-func drop_all_lists() -> void:
+func clear_all_bubble_lists() -> void:
 	var drop_ids: Array[int] = []
 	drop_ids.assign(chat_list_caches.keys())
 	for session_id: int in drop_ids:
-		drop_list(session_id)
+		clear_bubble_list(session_id)
 	pass
 
 

@@ -1,89 +1,145 @@
 class_name SkillBubble
 extends RefCounted
 
-## Skill index bubble — toolbar toggle + expandable Markdown preview of .cursor/skills/README.md.
+## Skill index — context (session / toolbar) + expandable Markdown chat bubble.
+
+
+# ---------------------------------------------------------------------------
+# SkillContext — README load, LLM message, session append/remove, SK toggle
+# ---------------------------------------------------------------------------
 
 const SETTING_KEY := "agent_skill_in_prompt_enabled"
-const PREVIEW_LINES := 8
 const README_REL := ".cursor/skills/README.md"
-const META_EXPANDED := "skill_bubble_expanded"
-const META_EXPAND_BUTTON := "skill_bubble_expand_button"
+const LLM_MESSAGE_HEADER := "Skill index (.cursor/skills/README.md):"
 
-static var skill_in_prompt_enabled: bool = true
+static var cached_readme_text: String = ""
+static var cached_llm_message: String = ""
 
 var button: Button
 
 
 static func _static_init() -> void:
 	AgentEvents.events.session_added.connect(on_session_added)
+	var path := AgentWorkspace.resolve_path(README_REL)
+	if FileAccess.file_exists(path):
+		cached_readme_text = FileUtils.read_file_to_string(path)
+		if StringUtils.is_not_blank(cached_readme_text):
+			cached_llm_message = StringUtils.format("{}\n\n{}", LLM_MESSAGE_HEADER, cached_readme_text.strip_edges())
 	pass
 
 
-static func is_enabled() -> bool:
-	return skill_in_prompt_enabled
+static func default_for_new_sessions() -> bool:
+	return Setting.get_bool(SETTING_KEY, true)
 
 
 static func on_session_added(session_id: int, _title: String) -> void:
-	if not is_enabled():
+	if not default_for_new_sessions():
 		return
 	append_skill_context(session_id)
 	pass
 
 
+static func has_skill_context(session_id: int) -> bool:
+	var session := AgentSessionStore.load_session(session_id)
+	return has_skill_context_in(session)
+
+
+static func has_skill_context_in(session: AgentSession) -> bool:
+	if session == null:
+		return false
+	for entry: ChatEntry in session.chat_entries:
+		if entry.kind == ChatEntry.KIND_SKILL:
+			return true
+	return false
+
+
+static func is_skill_llm_message(msg: ChatMessage) -> bool:
+	return msg.role == ChatMessage.ROLE_SYSTEM and msg.content.begins_with(LLM_MESSAGE_HEADER)
+
+
 static func append_skill_context(session_id: int) -> void:
+	var session := AgentSessionStore.load_session(session_id)
+	if session == null or has_skill_context_in(session):
+		return
+	if StringUtils.is_blank(cached_readme_text):
+		return
+	session.messages.append(ChatMessage.system(cached_llm_message))
+	AgentSessionManager.add_chat_entry(session_id, ChatEntry.KIND_SKILL, ChatEntry.TITLE_SKILL, cached_readme_text)
+	pass
+
+
+static func remove_skill_context(session_id: int) -> void:
 	var session := AgentSessionStore.load_session(session_id)
 	if session == null:
 		return
-	var readme_text := load_readme_text()
-	if StringUtils.is_blank(readme_text):
-		return
-	var skill_message := build_llm_message(readme_text)
-	session.messages.append(ChatMessage.system(skill_message))
-	AgentSessionManager.add_chat_entry(session_id, ChatEntry.KIND_SKILL, ChatEntry.TITLE_SKILL, readme_text)
+
+	var kept_messages: Array[ChatMessage] = []
+	for msg: ChatMessage in session.messages:
+		if not is_skill_llm_message(msg):
+			kept_messages.append(msg)
+	session.messages = kept_messages
+
+	var kept_entries: Array[ChatEntry] = []
+	for entry: ChatEntry in session.chat_entries:
+		if entry.kind != ChatEntry.KIND_SKILL:
+			kept_entries.append(entry)
+	session.chat_entries = kept_entries
 	pass
 
 
 func setup_toggle(p_button: Button) -> void:
-	skill_in_prompt_enabled = Setting.get_bool(SETTING_KEY, true)
 	button = p_button
 	button.toggled.connect(on_toggled)
-	AgentEvents.events.theme_changed.connect(apply_toggle_theme)
-	apply_toggle_theme()
+	AgentEvents.events.theme_changed.connect(on_theme_changed)
+	AgentEvents.events.session_selected.connect(sync_toggle_button)
+	sync_toggle_button(AgentSessionManager.active_session_id)
 	pass
 
 
-func apply_toggle_theme(_is_dark: bool = false) -> void:
-	skill_in_prompt_enabled = Setting.get_bool(SETTING_KEY, true)
-	var tooltip := "Include skill index in system prompt (new chats)" if not skill_in_prompt_enabled else "Skill index included in system prompt (new chats)"
+func on_theme_changed(_is_dark: bool = false) -> void:
+	sync_toggle_button(AgentSessionManager.active_session_id)
+	pass
+
+
+func sync_toggle_button(session_id: int) -> void:
+	if button == null:
+		return
+	var enabled := has_skill_context(session_id) if session_id != AgentSessionManager.INVALID_SESSION_ID else default_for_new_sessions()
+	var tooltip := "Add skill index to this chat" if not enabled else "Remove skill index from this chat"
 	AgentToolbarButton.style(button, tooltip)
 	button.set_block_signals(true)
-	button.button_pressed = skill_in_prompt_enabled
+	button.button_pressed = enabled
 	button.set_block_signals(false)
 	pass
 
 
 func on_toggled(enabled: bool) -> void:
-	skill_in_prompt_enabled = enabled
 	Setting.set_bool(SETTING_KEY, enabled)
 	Setting.save()
-	apply_toggle_theme()
+
+	var session_id := AgentSessionManager.active_session_id
+	if session_id == AgentSessionManager.INVALID_SESSION_ID:
+		sync_toggle_button(session_id)
+		return
+
+	if enabled:
+		append_skill_context(session_id)
+	else:
+		remove_skill_context(session_id)
+
+	AgentSessionManager.persist_session(session_id)
+	AgentEvents.events.skill_context_changed.emit(session_id)
+	sync_toggle_button(session_id)
 	pass
 
 
-static func load_readme_text() -> String:
-	var path := AgentWorkspace.resolve_path(README_REL)
-	if not FileAccess.file_exists(path):
-		return ""
-	return FileUtils.read_file_to_string(path)
+# ---------------------------------------------------------------------------
+# SkillBubble — chat UI (expand/collapse, Markdown preview)
+# ---------------------------------------------------------------------------
 
-
-static func build_llm_message(readme_text: String) -> String:
-	return StringUtils.format(
-		"""Skill index (.cursor/skills/README.md):
-
-{}""",
-		readme_text.strip_edges()
-	)
+const PREVIEW_LINES := 8
+const META_EXPANDED := "skill_bubble_expanded"
+const META_EXPAND_BUTTON := "skill_bubble_expand_button"
 
 
 static func preview(body: String) -> String:
@@ -91,9 +147,7 @@ static func preview(body: String) -> String:
 
 
 static func needs_expand(body: String) -> bool:
-	if StringUtils.is_blank(body):
-		return false
-	return preview(body) != body
+	return StringUtils.is_not_blank(body) and preview(body) != body
 
 
 static func hidden_line_count(body: String) -> int:
