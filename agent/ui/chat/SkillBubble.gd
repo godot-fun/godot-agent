@@ -14,8 +14,33 @@ static var skill_in_prompt_enabled: bool = true
 var button: Button
 
 
+static func _static_init() -> void:
+	AgentEvents.events.session_added.connect(on_session_added)
+	pass
+
+
 static func is_enabled() -> bool:
 	return skill_in_prompt_enabled
+
+
+static func on_session_added(session_id: int, _title: String) -> void:
+	if not is_enabled():
+		return
+	append_skill_context(session_id)
+	pass
+
+
+static func append_skill_context(session_id: int) -> void:
+	var session := AgentSessionStore.load_session(session_id)
+	if session == null:
+		return
+	var readme_text := load_readme_text()
+	if StringUtils.is_blank(readme_text):
+		return
+	var skill_message := build_llm_message(readme_text)
+	session.messages.append(ChatMessage.system(skill_message))
+	AgentSessionManager.add_chat_entry(session_id, ChatEntry.KIND_SKILL, ChatEntry.TITLE_SKILL, readme_text)
+	pass
 
 
 func setup_toggle(p_button: Button) -> void:

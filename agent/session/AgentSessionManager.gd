@@ -66,11 +66,20 @@ static func on_persist_session(session_id: int, _arg: Variant = null) -> void:
 # ---------------------------------------------------------------------------
 
 ## New session is prepended to the index. Selects it only when nothing is active.
+## Seeds the system prompt, then session_added so listeners (e.g. SkillBubble) can append context.
 static func create_session() -> AgentSession:
 	var session := AgentSessionStore.create_session()
 	add_index(session)
-	setup_new_chat(session.id)
+
+	# LLM history + matching System bubble in chat UI.
+	var system_text := SystemPrompt.build()
+	session.messages.append(ChatMessage.system(system_text))
+	add_chat_entry(session.id, ChatEntry.KIND_SYSTEM, ChatEntry.TITLE_SYSTEM, system_text)
+
+	# After system prompt is in place — listeners (e.g. SkillBubble) may append more context.
 	AgentEvents.events.session_added.emit(session.id, session.title)
+
+	# Save empty chat; auto-select when booting with no prior active session.
 	persist_session(session.id)
 	if active_session_id == INVALID_SESSION_ID:
 		select_session(session.id)
@@ -182,31 +191,6 @@ static func is_active(session_id: int) -> bool:
 static func is_running(session_id: int) -> bool:
 	var session_index := get_index(session_id)
 	return session_index != null and session_index.is_running()
-
-# ---------------------------------------------------------------------------
-# Session setup
-# ---------------------------------------------------------------------------
-
-static func setup_new_chat(session_id: int) -> void:
-	var system_text := SystemPrompt.build()
-	var session := AgentSessionStore.load_session(session_id)
-	if session == null:
-		return
-	session.messages.append(ChatMessage.system(system_text))
-	add_chat_entry(session_id, ChatEntry.KIND_SYSTEM, ChatEntry.TITLE_SYSTEM, system_text)
-	if SkillBubble.is_enabled():
-		append_skill_context(session_id, session)
-	pass
-
-
-static func append_skill_context(session_id: int, session: AgentSession) -> void:
-	var readme_text := SkillBubble.load_readme_text()
-	if StringUtils.is_blank(readme_text):
-		return
-	var skill_message := SkillBubble.build_llm_message(readme_text)
-	session.messages.append(ChatMessage.system(skill_message))
-	add_chat_entry(session_id, ChatEntry.KIND_SKILL, ChatEntry.TITLE_SKILL, readme_text)
-	pass
 
 
 static func has_chat_history(session_id: int) -> bool:
