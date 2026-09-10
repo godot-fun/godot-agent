@@ -12,9 +12,6 @@ var sidebar_panel: PanelContainer
 
 var session_rows: Dictionary[int, PanelContainer] = {}
 var hover_session_id: int = AgentSessionManager.INVALID_SESSION_ID
-var drag_session_id: int = AgentSessionManager.INVALID_SESSION_ID
-var drop_target_id: int = AgentSessionManager.INVALID_SESSION_ID
-var drop_insert_after: bool = false
 var skip_row_press: bool = false
 
 
@@ -79,7 +76,6 @@ func build_sidebar_style() -> StyleBoxFlat:
 # ---------------------------------------------------------------------------
 
 func rebuild() -> void:
-	end_session_drag()
 	clear()
 	for session_index: AgentSessionIndexes.SessionIndex in AgentSessionManager.session_indexes.indexes:
 		append_row(session_index.id, session_index.title)
@@ -151,14 +147,17 @@ func clear() -> void:
 
 
 func append_row(session_id: int, title: String) -> void:
-	var row_panel := SessionRow.new()
-	row_panel.sidebar = self
-	row_panel.session_id = session_id
+	var row_panel := PanelContainer.new()
 	row_panel.mouse_filter = Control.MOUSE_FILTER_PASS
 	row_panel.mouse_default_cursor_shape = Control.CURSOR_MOVE
 	row_panel.mouse_entered.connect(on_session_row_mouse_entered.bind(session_id))
 	row_panel.mouse_exited.connect(on_session_row_mouse_exited.bind(session_id))
 	row_panel.set_meta("session_id", session_id)
+	row_panel.set_drag_forwarding(
+		get_row_drag_data.bind(session_id),
+		can_drop_on_row.bind(session_id),
+		drop_on_row.bind(session_id)
+	)
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 4)
@@ -228,7 +227,7 @@ func on_session_row_mouse_exited(session_id: int) -> void:
 	pass
 
 
-func build_session_row_style(selected: bool, hovered: bool, drop_edge: int = 0, dragging: bool = false) -> StyleBoxFlat:
+func build_session_row_style(selected: bool, hovered: bool) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.set_corner_radius_all(6)
 	style.content_margin_left = 10
@@ -243,16 +242,6 @@ func build_session_row_style(selected: bool, hovered: bool, drop_edge: int = 0, 
 		style.bg_color = AgentColors.sidebar_row_hover
 	else:
 		style.bg_color = Color(0, 0, 0, 0)
-	if dragging:
-		var bg := style.bg_color
-		bg.a *= 0.4
-		style.bg_color = bg
-	if drop_edge < 0:
-		style.border_color = AgentColors.sidebar_row_accent
-		style.set_border_width(SIDE_TOP, 2)
-	elif drop_edge > 0:
-		style.border_color = AgentColors.sidebar_row_accent
-		style.set_border_width(SIDE_BOTTOM, 2)
 	return style
 
 
@@ -265,13 +254,7 @@ func style_session_row(session_id: int, selected: bool) -> void:
 		return
 
 	var hovered := hover_session_id == session_id
-	var drop_edge := 0
-	if drop_target_id == session_id and drag_session_id != session_id:
-		drop_edge = 1 if drop_insert_after else -1
-	row_panel.add_theme_stylebox_override(
-		"panel",
-		build_session_row_style(selected, hovered, drop_edge, session_id == drag_session_id)
-	)
+	row_panel.add_theme_stylebox_override("panel", build_session_row_style(selected, hovered))
 
 	var text_color := AgentColors.sidebar_text if selected else AgentColors.sidebar_muted
 	if hovered and not selected:
@@ -299,7 +282,7 @@ func format_session_label(session_id: int, title: String) -> String:
 
 
 # ---------------------------------------------------------------------------
-# Drag reorder
+# Drag reorder — move the real row, leave selected styling alone
 # ---------------------------------------------------------------------------
 
 func is_session_drag(data: Variant) -> bool:
@@ -310,49 +293,26 @@ func get_row_drag_data(_at_position: Vector2, session_id: int) -> Variant:
 	var row_panel: PanelContainer = session_rows.get(session_id)
 	if row_panel == null:
 		return null
-	drag_session_id = session_id
 	skip_row_press = true
-	var preview := Label.new()
-	preview.text = format_session_label(session_id, AgentSessionManager.get_title(session_id))
-	preview.add_theme_color_override("font_color", AgentColors.sidebar_text)
-	var wrap := PanelContainer.new()
-	wrap.add_theme_stylebox_override("panel", build_session_row_style(false, true))
-	wrap.add_child(preview)
-	row_panel.set_drag_preview(wrap)
-	refresh_row_styles()
+	row_panel.set_drag_preview(Control.new())
 	return {"type": DRAG_TYPE, "session_id": session_id}
 
 
 func can_drop_on_row(at_position: Vector2, data: Variant, target_id: int) -> bool:
 	if not is_session_drag(data):
 		return false
-	var target_row: PanelContainer = session_rows.get(target_id)
-	if target_row == null:
-		return false
-	var from_id := int(data.session_id)
-	if from_id == target_id:
-		if drop_target_id != AgentSessionManager.INVALID_SESSION_ID:
-			drop_target_id = AgentSessionManager.INVALID_SESSION_ID
-			refresh_row_styles()
-		return true
-	var insert_after := at_position.y > target_row.size.y * 0.5
-	if drop_target_id == target_id and drop_insert_after == insert_after:
-		return true
-	drop_target_id = target_id
-	drop_insert_after = insert_after
-	refresh_row_styles()
+	move_row(int(data.session_id), target_id, at_position)
 	return true
 
 
-func drop_on_row(at_position: Vector2, data: Variant, target_id: int) -> void:
-	if not is_session_drag(data):
-		end_session_drag()
-		return
-	var from_id := int(data.session_id)
+func drop_on_row(_at_position: Vector2, _data: Variant, _target_id: int) -> void:
+	pass
+
+
+func move_row(from_id: int, target_id: int, at_position: Vector2) -> void:
 	var from_row: PanelContainer = session_rows.get(from_id)
 	var target_row: PanelContainer = session_rows.get(target_id)
-	if from_row == null or target_row == null:
-		end_session_drag()
+	if from_row == null or target_row == null or from_id == target_id:
 		return
 	var to_index := target_row.get_index()
 	if at_position.y > target_row.size.y * 0.5:
@@ -361,10 +321,10 @@ func drop_on_row(at_position: Vector2, data: Variant, target_id: int) -> void:
 	if from_index < to_index:
 		to_index -= 1
 	to_index = clampi(to_index, 0, session_list.get_child_count() - 1)
-	if from_index != to_index:
-		session_list.move_child(from_row, to_index)
-		persist_row_order()
-	end_session_drag()
+	if from_index == to_index:
+		return
+	session_list.move_child(from_row, to_index)
+	persist_row_order()
 	pass
 
 
@@ -375,44 +335,3 @@ func persist_row_order() -> void:
 			ordered_ids.append(int(child.get_meta("session_id")))
 	AgentSessionManager.reorder_sessions(ordered_ids)
 	pass
-
-
-func refresh_row_styles() -> void:
-	for session_id: int in session_rows:
-		style_session_row(session_id, session_id == AgentSessionManager.active_session_id)
-	pass
-
-
-func end_session_drag() -> void:
-	if drag_session_id == AgentSessionManager.INVALID_SESSION_ID and drop_target_id == AgentSessionManager.INVALID_SESSION_ID:
-		return
-	drag_session_id = AgentSessionManager.INVALID_SESSION_ID
-	drop_target_id = AgentSessionManager.INVALID_SESSION_ID
-	drop_insert_after = false
-	refresh_row_styles()
-	pass
-
-
-## Row Control so Godot drag notifications reach the sidebar (RefCounted cannot receive them).
-class SessionRow extends PanelContainer:
-	var sidebar: AgentSessionSidebar
-	var session_id: int = AgentSessionManager.INVALID_SESSION_ID
-
-
-	func _get_drag_data(at_position: Vector2) -> Variant:
-		return sidebar.get_row_drag_data(at_position, session_id)
-
-
-	func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
-		return sidebar.can_drop_on_row(at_position, data, session_id)
-
-
-	func _drop_data(at_position: Vector2, data: Variant) -> void:
-		sidebar.drop_on_row(at_position, data, session_id)
-		pass
-
-
-	func _notification(what: int) -> void:
-		if what == NOTIFICATION_DRAG_END and sidebar != null:
-			sidebar.end_session_drag()
-		pass
