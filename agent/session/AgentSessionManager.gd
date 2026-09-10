@@ -4,9 +4,9 @@ extends RefCounted
 ## Manages multiple agent sessions and the active selection.
 
 const INVALID_SESSION_ID := -1
-const NEXT_SESSION_ID_KEY := "agent_next_session_id"
+const TITLE_MAX := 32
 
-static var sessions: Dictionary[int, AgentSession] = {}
+static var session_indexes := AgentSessionIndexes.new()
 static var active_session_id: int = INVALID_SESSION_ID
 
 
@@ -33,14 +33,40 @@ static func _static_init() -> void:
 
 
 # ---------------------------------------------------------------------------
+# Persistence — load / save
+# ---------------------------------------------------------------------------
+
+static func load_from_disk() -> void:
+	active_session_id = INVALID_SESSION_ID
+	session_indexes = AgentSessionIndexes.load_index()
+	select_session()
+	pass
+
+
+static func persist_session(session_id: int) -> void:
+	var session := AgentSessionStore.load_session(session_id)
+	if session == null:
+		return
+	if session.messages.is_empty():
+		return
+	update_index_title(session_id, session.title)
+	AgentSessionStore.save_session(session_id)
+	AgentSessionIndexes.save_index(session_indexes)
+	pass
+
+static func on_persist_session(session_id: int, _arg: Variant = null) -> void:
+	persist_session(session_id)
+	pass
+
+
+# ---------------------------------------------------------------------------
 # Session registry — create, delete
 # ---------------------------------------------------------------------------
 
 static func create_session() -> AgentSession:
-	var session_id := next_session_id()
-	var session := AgentSession.new(session_id, StringUtils.format("New Chat {}", session_id))
-	session.setup_new_chat()
-	sessions[session.id] = session
+	var session := AgentSessionStore.create_session()
+	add_index(session)
+	setup_new_chat(session.id)
 	AgentEvents.events.session_added.emit(session.id, session.title)
 	persist_session(session.id)
 	if active_session_id == INVALID_SESSION_ID:
@@ -49,64 +75,87 @@ static func create_session() -> AgentSession:
 
 
 static func delete_session(session_id: int) -> void:
-	if not sessions.has(session_id):
+	if not has_index(session_id):
 		return
-	var session: AgentSession = sessions[session_id]
-	if session.is_running():
-		session.request_stop()
+	var session_index := get_index(session_id)
+	if session_index != null and session_index.is_running():
+		request_stop(session_id)
 
-	sessions.erase(session_id)
-	AgentSessionStore.delete_session_file(session_id, sessions)
+	AgentSessionStore.delete_session(session_id)
+	remove_index(session_id)
+	AgentSessionIndexes.save_index(session_indexes)
 	AgentEvents.events.session_removed.emit(session_id)
 
 	if active_session_id == session_id:
 		active_session_id = INVALID_SESSION_ID
-		select_first_or_create()
+		select_session()
 	pass
-
-
-static func next_session_id() -> int:
-	var session_id := Setting.get_int(NEXT_SESSION_ID_KEY, 0)
-	Setting.set_int(NEXT_SESSION_ID_KEY, session_id + 1)
-	Setting.save()
-	return session_id
 
 
 # ---------------------------------------------------------------------------
 # Selection
 # ---------------------------------------------------------------------------
 
-static func select_session(session_id: int) -> void:
-	if not sessions.has(session_id):
+static func select_session(session_id: int = INVALID_SESSION_ID) -> void:
+	if session_id == INVALID_SESSION_ID:
+		if session_indexes.indexes.is_empty():
+			create_session()
+			return
+		session_id = session_indexes.indexes[0].id
+	if not has_index(session_id):
 		return
-	# load session file with messages from disk
-	var session := get_session(session_id)
-	if session.messages.is_empty():
-		var loaded_session := AgentSessionStore.load_session(session_id)
-		sessions[session_id] = loaded_session
+	var session := AgentSessionStore.load_session(session_id)
+	if session == null:
+		session = AgentSession.new(session_id, get_title(session_id))
+		AgentSessionStore.sessions[session_id] = session
 	active_session_id = session_id
 	AgentEvents.events.session_selected.emit(session_id)
-
-
-static func select_first_or_create() -> void:
-	var session_ids := get_session_ids()
-	if session_ids.is_empty():
-		create_session()
-	else:
-		select_session(session_ids[0])
-	pass
 
 
 # ---------------------------------------------------------------------------
 # Query
 # ---------------------------------------------------------------------------
 
-static func get_session(session_id: int) -> AgentSession:
-	return sessions.get(session_id)
+static func get_index(session_id: int) -> AgentSessionIndexes.SessionIndex:
+	for session_index: AgentSessionIndexes.SessionIndex in session_indexes.indexes:
+		if session_index.id == session_id:
+			return session_index
+	return null
 
 
-static func get_active() -> AgentSession:
-	return get_session(active_session_id)
+static func has_index(session_id: int) -> bool:
+	return get_index(session_id) != null
+
+
+static func get_title(session_id: int) -> String:
+	var session_index := get_index(session_id)
+	if session_index == null:
+		return ""
+	return session_index.title
+
+
+static func add_index(session: AgentSession) -> void:
+	var session_index := AgentSessionIndexes.SessionIndex.new()
+	session_index.id = session.id
+	session_index.title = session.title
+	session_indexes.indexes.insert(0, session_index)
+	pass
+
+
+static func remove_index(session_id: int) -> void:
+	for i in session_indexes.indexes.size():
+		if session_indexes.indexes[i].id == session_id:
+			session_indexes.indexes.remove_at(i)
+			return
+	pass
+
+
+static func update_index_title(session_id: int, title: String) -> void:
+	var session_index := get_index(session_id)
+	if session_index == null:
+		return
+	session_index.title = title
+	pass
 
 
 static func is_active(session_id: int) -> bool:
@@ -114,91 +163,156 @@ static func is_active(session_id: int) -> bool:
 
 
 static func is_running(session_id: int) -> bool:
-	var session := get_session(session_id)
-	return session != null and session.is_running()
+	var session_index := get_index(session_id)
+	return session_index != null and session_index.is_running()
+
+# ---------------------------------------------------------------------------
+# Session setup
+# ---------------------------------------------------------------------------
+
+static func setup_new_chat(session_id: int) -> void:
+	var system_text := SystemPrompt.build()
+	var session := AgentSessionStore.load_session(session_id)
+	if session == null:
+		return
+	session.messages.append(ChatMessage.system(system_text))
+	add_chat_entry(session_id, ChatEntry.KIND_SYSTEM, ChatEntry.TITLE_SYSTEM, system_text)
+	pass
 
 
-static func get_session_ids() -> Array[int]:
-	var ids: Array[int] = []
-	ids.assign(sessions.keys())
-	ids.sort()
-	ids.reverse()
-	return ids
+static func has_chat_history(session_id: int) -> bool:
+	var session := AgentSessionStore.load_session(session_id)
+	if session == null:
+		return false
+	for entry in session.chat_entries:
+		if entry.kind != ChatEntry.KIND_SYSTEM:
+			return true
+	return false
+
+
+# ---------------------------------------------------------------------------
+# Title
+# ---------------------------------------------------------------------------
+
+static func set_title_from_prompt(session_id: int, prompt: String) -> void:
+	if has_chat_history(session_id):
+		return
+	var session := AgentSessionStore.load_session(session_id)
+	if session == null:
+		return
+	session.title = StringUtils.truncate(prompt.strip_edges().replace("\n", " "), TITLE_MAX)
+	AgentEvents.events.session_title_changed.emit(session_id, session.title)
+	pass
 
 
 # ---------------------------------------------------------------------------
 # User actions — send, stop
 # ---------------------------------------------------------------------------
 
-static func send_message(session_id: int, text: String) -> void:
-	var session := get_session(session_id)
+static func async_send(session_id: int, user_text: String) -> void:
+	var session_index := get_index(session_id)
+	if session_index == null:
+		return
+	if session_index.is_running():
+		Alert.alert("session is busy", Colors.error)
+		return
+	if StringUtils.is_blank(user_text):
+		return
+	var session := AgentSessionStore.load_session(session_id)
 	if session == null:
 		return
-	await session.async_send(text)
+	var trimmed := user_text.strip_edges()
+	set_title_from_prompt(session_id, trimmed)
+	session.messages.append(ChatMessage.user(trimmed))
+	add_chat_entry(session_id, ChatEntry.KIND_USER, ChatEntry.TITLE_USER, trimmed)
+	await run_agent(session)
 	pass
 
-static func on_session_resume(session_id: int) -> void:
-	var session := get_session(session_id)
-	if session == null or session.is_running():
+
+static func async_resume(session_id: int) -> void:
+	var session_index := get_index(session_id)
+	if session_index == null:
 		return
-	await session.async_resume()
+	if session_index.is_running():
+		Alert.alert("session is busy", Colors.error)
+		return
+	var session := AgentSessionStore.load_session(session_id)
+	if session == null:
+		return
+	await run_agent(session)
+	pass
+
+
+static func run_agent(session: AgentSession) -> void:
+	var session_index := get_index(session.id)
+	if session_index == null:
+		return
+	session_index.run = AgentSessionIndexes.RunState.new()
+	await AgentLoop.run(session)
+	pass
+
+
+static func on_session_resume(session_id: int) -> void:
+	await async_resume(session_id)
 	pass
 
 static func request_stop(session_id: int) -> void:
-	var session := get_session(session_id)
+	var session_index := get_index(session_id)
+	if session_index == null:
+		return
+	if not session_index.is_running() or session_index.is_stop_requested():
+		return
+	session_index.run.stop_requested = true
+	OSUtils.stop_current()
+	pass
+
+
+# ---------------------------------------------------------------------------
+# Chat Entry
+# ---------------------------------------------------------------------------
+
+static func append_chat_entry_stream(session_id: int, stream_kind: String, chunk: String) -> ChatEntry:
+	var session_index := get_index(session_id)
+	if session_index == null or session_index.run == null:
+		return null
+	var run := session_index.run
+	if stream_kind == OpenAiClient.STREAM_KIND_REASONING:
+		if run.step_thinking_entry == null:
+			run.step_thinking_entry = add_chat_entry(session_id, ChatEntry.KIND_THINKING, ChatEntry.TITLE_THINKING, chunk, false)
+		else:
+			run.step_thinking_entry.body += chunk
+		return run.step_thinking_entry
+	if run.step_agent_entry == null:
+		run.step_agent_entry = add_chat_entry(session_id, ChatEntry.KIND_AGENT, ChatEntry.TITLE_AGENT, chunk, false)
+	else:
+		run.step_agent_entry.body += chunk
+	return run.step_agent_entry
+
+
+static func add_chat_entry(session_id: int, kind: String, entry_title: String, body: String, _emit_end: bool = true) -> ChatEntry:
+	var session := AgentSessionStore.load_session(session_id)
 	if session == null:
-		return
-	session.request_stop()
-	pass
-
-
-# ---------------------------------------------------------------------------
-# Persistence — load / save
-# ---------------------------------------------------------------------------
-
-static func load_from_disk() -> void:
-	sessions.clear()
-	active_session_id = INVALID_SESSION_ID
-
-	var session_indexes := AgentSessionStore.load_index()
-	for session_index: AgentSessionStore.SessionIndex in session_indexes.indexes:
-		sessions[session_index.id] = AgentSession.new(session_index.id, session_index.title)
-	select_first_or_create()
-	pass
-
-
-static func persist_session(session_id: int) -> void:
-	var session := get_session(session_id)
-	if session == null:
-		return
-	if session.messages.is_empty():
-		return
-	AgentSessionStore.save_session(session_id, sessions)
-	pass
-
-
-# ---------------------------------------------------------------------------
-# Event handlers — session persistence
-# ---------------------------------------------------------------------------
-
-static func on_persist_session(session_id: int, _arg: Variant = null) -> void:
-	persist_session(session_id)
-	pass
-
+		return null
+	var entry := ChatEntry.new(kind, entry_title, body)
+	session.chat_entries.append(entry)
+	AgentEvents.events.chat_entry_add.emit(session_id, entry)
+	return entry
 
 # ---------------------------------------------------------------------------
 # Event handlers — agent run
 # ---------------------------------------------------------------------------
 
 static func on_agent_end(session_id: int, error_message: String) -> void:
-	var session := get_session(session_id)
+	var session := AgentSessionStore.load_session(session_id)
 	if session == null:
 		return
 	if StringUtils.is_not_blank(error_message):
-		session.add_chat_entry(ChatEntry.KIND_ERROR, ChatEntry.TITLE_ERROR, error_message)
+		add_chat_entry(session_id, ChatEntry.KIND_ERROR, ChatEntry.TITLE_ERROR, error_message)
 	persist_session(session_id)
 
-	session.stop_running()
+	var session_index := get_index(session_id)
+	if session_index != null:
+		session_index.stop_running()
 	AgentEvents.events.session_stop.emit(session_id)
 	pass
 
@@ -208,18 +322,17 @@ static func on_agent_end(session_id: int, error_message: String) -> void:
 # ---------------------------------------------------------------------------
 
 static func on_turn_start(session_id: int) -> void:
-	var session := get_session(session_id)
-	if session == null:
+	var session_index := get_index(session_id)
+	if session_index == null:
 		return
-	session.clear_run_state()
+	session_index.clear_run_state()
 	pass
 
 
 static func on_message_update(session_id: int, chunk: String, stream_kind: String) -> void:
-	var session := get_session(session_id)
-	if session == null:
+	var entry := append_chat_entry_stream(session_id, stream_kind, chunk)
+	if entry == null:
 		return
-	var entry := session.append_chat_entry_stream(stream_kind, chunk)
 	AgentEvents.events.chat_entry_update.emit(session_id, entry, stream_kind)
 	pass
 
@@ -229,18 +342,11 @@ static func on_message_update(session_id: int, chunk: String, stream_kind: Strin
 # ---------------------------------------------------------------------------
 
 static func on_tool_execution_start(session_id: int, _tool_call_id: String, tool_name: String, args: Dictionary[String, String]) -> void:
-	var session := get_session(session_id)
-	if session == null:
-		return
-	session.add_chat_entry(ChatEntry.KIND_TOOL, tool_name, format_tool_body(tool_name, args))
+	add_chat_entry(session_id, ChatEntry.KIND_TOOL, tool_name, format_tool_body(tool_name, args))
 	pass
 
 
 static func on_tool_execution_end(session_id: int, _tool_call_id: String, tool_name: String, result: String) -> void:
-	var session := get_session(session_id)
-	if session == null:
-		return
-	
 	if tool_name == ReadTool.NAME && StringUtils.is_not_empty(result):
 		return
 
@@ -250,7 +356,7 @@ static func on_tool_execution_end(session_id: int, _tool_call_id: String, tool_n
 		title = StringUtils.first_lines(result, 1)
 		body = StringUtils.first_lines_after(result, 1)
 		
-	session.add_chat_entry(ChatEntry.KIND_RESULT, title, body)
+	add_chat_entry(session_id, ChatEntry.KIND_RESULT, title, body)
 	pass
 
 

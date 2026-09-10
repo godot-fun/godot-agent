@@ -74,25 +74,20 @@ func build_sidebar_style() -> StyleBoxFlat:
 
 func rebuild() -> void:
 	clear()
-	for session_id: int in AgentSessionManager.get_session_ids():
-		var session := AgentSessionManager.get_session(session_id)
-		if session == null:
-			continue
-		append_row(session_id, session.title)
+	for session_index: AgentSessionIndexes.SessionIndex in AgentSessionManager.session_indexes.indexes:
+		append_row(session_index.id, session_index.title)
 	select_item(AgentSessionManager.active_session_id)
 	pass
 
 
 func refresh_item(session_id: int) -> void:
-	var session := AgentSessionManager.get_session(session_id)
-	if session == null:
-		return
+	var title := AgentSessionManager.get_title(session_id)
 	var row_panel: PanelContainer = session_rows.get(session_id)
 	if row_panel == null:
 		return
 	var select_button: Button = row_panel.get_meta("select_button")
 	if select_button != null:
-		select_button.text = format_session_label(session_id, session.title)
+		select_button.text = format_session_label(session_id, title)
 	pass
 
 
@@ -262,7 +257,6 @@ func style_session_row(session_id: int, selected: bool) -> void:
 # ---------------------------------------------------------------------------
 
 func format_session_label(session_id: int, title: String) -> String:
-	var session := AgentSessionManager.get_session(session_id)
-	if session != null and session.is_running():
+	if AgentSessionManager.is_running(session_id):
 		return title + " ●"
 	return title

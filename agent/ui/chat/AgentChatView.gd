@@ -61,7 +61,7 @@ func on_session_stop(session_id: int) -> void:
 	if AgentSessionManager.is_active(session_id):
 		refresh_error_resume_buttons()
 	chat_bubble_flusher.flush_now()
-	var session := AgentSessionManager.get_session(session_id)
+	var session := AgentSessionStore.load_session(session_id)
 	if session != null:
 		sync_new_entries(session)
 	pass
@@ -112,7 +112,7 @@ func on_chat_bubble_flushed() -> void:
 
 ## Re-render every bubble body after Markdown toggle changes.
 func on_markdown_changed(_enabled: bool) -> void:
-	var session := AgentSessionManager.get_active()
+	var session := AgentSessionStore.load_session(AgentSessionManager.active_session_id)
 	if session == null:
 		return
 	for entry: ChatEntry in session.chat_entries:
@@ -144,7 +144,7 @@ func on_theme_changed(_is_dark: bool) -> void:
 # ---------------------------------------------------------------------------
 
 func show_session(session_id: int) -> void:
-	var session := AgentSessionManager.get_session(session_id)
+	var session := AgentSessionStore.load_session(session_id)
 	if session == null:
 		return
 
@@ -330,7 +330,7 @@ func build_bubble_style(bg_color: Color) -> StyleBoxFlat:
 
 ## chat_entries index matches VBoxContainer child order; label lives on wrapper meta.
 func get_bubble_rich_text(session_id: int, entry: ChatEntry) -> RichTextLabel:
-	var session := AgentSessionManager.get_session(session_id)
+	var session := AgentSessionStore.load_session(session_id)
 	var list: VBoxContainer = chat_list_caches.get(session_id)
 	if session == null or list == null:
 		return null

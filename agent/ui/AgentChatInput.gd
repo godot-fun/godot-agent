@@ -92,9 +92,9 @@ func on_session_stop(session_id: int) -> void:
 
 
 func refresh_from_active_session() -> void:
-	var session := AgentSessionManager.get_active()
-	var running := session != null and session.is_running()
-	var no_history := session != null and not session.has_chat_history()
+	var session := AgentSessionStore.load_session(AgentSessionManager.active_session_id)
+	var running := AgentSessionManager.is_running(AgentSessionManager.active_session_id)
+	var no_history := session != null and not AgentSessionManager.has_chat_history(session.id)
 	refresh_state(running, no_history)
 	pass
 
@@ -160,10 +160,10 @@ func on_global_input(event: InputEvent) -> void:
 # ---------------------------------------------------------------------------
 
 func on_input_action_pressed() -> void:
-	var session := AgentSessionManager.get_active()
+	var session := AgentSessionStore.load_session(AgentSessionManager.active_session_id)
 	if session == null:
 		return
-	if session.is_running():
+	if AgentSessionManager.is_running(session.id):
 		AgentSessionManager.request_stop(session.id)
 		return
 	var text := get_trimmed_text()
@@ -172,7 +172,7 @@ func on_input_action_pressed() -> void:
 		return
 	clear_text()
 	collapse_after_send()
-	await AgentSessionManager.send_message(session.id, text)
+	await AgentSessionManager.async_send(session.id, text)
 	pass
 
 
