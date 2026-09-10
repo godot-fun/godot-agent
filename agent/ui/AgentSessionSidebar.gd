@@ -144,10 +144,10 @@ func append_row(session_id: int, title: String) -> void:
 	var row_panel := PanelContainer.new()
 	row_panel.mouse_filter = Control.MOUSE_FILTER_PASS
 	row_panel.mouse_default_cursor_shape = Control.CURSOR_MOVE
-	row_panel.mouse_entered.connect(on_session_row_mouse_entered.bind(session_id))
-	row_panel.mouse_exited.connect(on_session_row_mouse_exited.bind(session_id))
+	bind_row_hover(row_panel, session_id)
 
 	var row := HBoxContainer.new()
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_theme_constant_override("separation", 4)
 	row_panel.add_child(row)
 
@@ -161,6 +161,7 @@ func append_row(session_id: int, title: String) -> void:
 	select_button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	select_button.pressed.connect(on_session_row_pressed.bind(session_id))
 	select_button.set_drag_forwarding(get_row_drag_data.bind(session_id), can_drop_on_row.bind(session_id), drop_on_row)
+	bind_row_hover(select_button, session_id)
 
 	var delete_button := Button.new()
 	delete_button.text = "×"
@@ -172,6 +173,7 @@ func append_row(session_id: int, title: String) -> void:
 	delete_button.add_theme_color_override("font_hover_color", AgentColors.error)
 	delete_button.add_theme_color_override("font_pressed_color", AgentColors.error)
 	delete_button.pressed.connect(on_session_delete_pressed.bind(session_id))
+	bind_row_hover(delete_button, session_id)
 
 	row.add_child(select_button)
 	row.add_child(delete_button)
@@ -198,6 +200,12 @@ func remove_row(session_id: int) -> void:
 # Row styling
 # ---------------------------------------------------------------------------
 
+func bind_row_hover(control: Control, session_id: int) -> void:
+	control.mouse_entered.connect(on_session_row_mouse_entered.bind(session_id))
+	control.mouse_exited.connect(on_session_row_mouse_exited.bind(session_id))
+	pass
+
+
 func on_session_row_mouse_entered(session_id: int) -> void:
 	hover_session_id = session_id
 	style_session_row(session_id, session_id == AgentSessionManager.active_session_id)
@@ -205,6 +213,9 @@ func on_session_row_mouse_entered(session_id: int) -> void:
 
 
 func on_session_row_mouse_exited(session_id: int) -> void:
+	var row_panel: PanelContainer = session_rows.get(session_id)
+	if row_panel != null and row_panel.get_global_rect().has_point(row_panel.get_global_mouse_position()):
+		return
 	if hover_session_id == session_id:
 		hover_session_id = AgentSessionManager.INVALID_SESSION_ID
 	style_session_row(session_id, session_id == AgentSessionManager.active_session_id)
