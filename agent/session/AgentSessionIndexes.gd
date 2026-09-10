@@ -5,6 +5,7 @@ extends RefCounted
 
 const INDEX_FILE := "index.json"
 
+var indexes: Array[SessionIndex] = []
 
 class RunState:
 	var stop_requested: bool = false
@@ -38,9 +39,6 @@ class SessionIndex:
 
 	func is_stop_requested() -> bool:
 		return run != null and run.stop_requested
-
-
-var indexes: Array[SessionIndex] = []
 
 
 static func get_index_path() -> String:

@@ -4,6 +4,7 @@ extends RefCounted
 ## Manages multiple agent sessions and the active selection.
 
 const INVALID_SESSION_ID := -1
+## Sidebar title cap for the first user prompt.
 const TITLE_MAX := 32
 
 static var session_indexes := AgentSessionIndexes.new()
@@ -36,6 +37,7 @@ static func _static_init() -> void:
 # Persistence — load / save
 # ---------------------------------------------------------------------------
 
+## Boot: reload the index, then select the first session (create one if the list is empty).
 static func load_from_disk() -> void:
 	active_session_id = INVALID_SESSION_ID
 	session_indexes = AgentSessionIndexes.load_index()
@@ -63,6 +65,7 @@ static func on_persist_session(session_id: int, _arg: Variant = null) -> void:
 # Session registry — create, delete
 # ---------------------------------------------------------------------------
 
+## New session is prepended to the index. Selects it only when nothing is active.
 static func create_session() -> AgentSession:
 	var session := AgentSessionStore.create_session()
 	add_index(session)
@@ -74,6 +77,7 @@ static func create_session() -> AgentSession:
 	return session
 
 
+## Deleting the active session clears the selection, then falls back via select_session().
 static func delete_session(session_id: int) -> void:
 	if not has_index(session_id):
 		return
@@ -96,6 +100,7 @@ static func delete_session(session_id: int) -> void:
 # Selection
 # ---------------------------------------------------------------------------
 
+## Omit session_id (or pass INVALID) to pick indexes[0], or create a session when the list is empty.
 static func select_session(session_id: int = INVALID_SESSION_ID) -> void:
 	if session_id == INVALID_SESSION_ID:
 		if session_indexes.indexes.is_empty():
@@ -194,6 +199,7 @@ static func has_chat_history(session_id: int) -> bool:
 # Title
 # ---------------------------------------------------------------------------
 
+## First user prompt becomes the sidebar title; later turns leave it unchanged.
 static func set_title_from_prompt(session_id: int, prompt: String) -> void:
 	if has_chat_history(session_id):
 		return
