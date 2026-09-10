@@ -98,42 +98,42 @@ static func load_session_file(file_path: String) -> AgentSession:
 
 
 # ---------------------------------------------------------------------------
-# Session Index
+# Session Indexes
 # ---------------------------------------------------------------------------
-class SessionIndex:
-	var index: Array[SessionSummary] = []
+class SessionIndexes:
+	var indexes: Array[SessionIndex] = []
 
-class SessionSummary:
+class SessionIndex:
 	var id: int = -1
 	var title: String = ""
 	var order: int = 0
 
 
-static func load_index() -> SessionIndex:
+static func load_index() -> SessionIndexes:
 	var text := FileUtils.read_file_to_string(get_index_path())
 	if StringUtils.is_not_blank(text):
-		var session_index: SessionIndex = JsonUtils.json_to_object(text, SessionIndex)
-		if session_index != null:
-			return session_index
+		var session_indexes: SessionIndexes = JsonUtils.json_to_object(text, SessionIndexes)
+		if session_indexes != null:
+			return session_indexes
 	var sessions: Dictionary[int, AgentSession] = {}
 	for session: AgentSession in load_all_sessions():
 		sessions[session.id] = session
 	return save_index(sessions)
 
 
-static func save_index(sessions: Dictionary[int, AgentSession]) -> SessionIndex:
-	var session_index := SessionIndex.new()
+static func save_index(sessions: Dictionary[int, AgentSession]) -> SessionIndexes:
+	var session_indexes := SessionIndexes.new()
 	for session_id: int in sessions:
 		var session: AgentSession = sessions[session_id]
 		if session == null:
 			continue
-		var session_summary := SessionSummary.new()
-		session_summary.id = session.id
-		session_summary.title = session.title
-		session_index.index.append(session_summary)
+		var session_index := SessionIndex.new()
+		session_index.id = session.id
+		session_index.title = session.title
+		session_indexes.indexes.append(session_index)
 	if not ensure_chats_dir():
 		Log.error("agent chat save failed, cannot create dir:[{}]", get_chats_dir())
-		return session_index
-	var json := JsonUtils.object_to_json(session_index)
+		return session_indexes
+	var json := JsonUtils.object_to_json(session_indexes)
 	FileUtils.write_string_to_file(get_index_path(), json)
-	return session_index
+	return session_indexes
