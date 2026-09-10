@@ -66,11 +66,8 @@ func flush() -> void:
 ## incremental=true appends plain-text deltas when markdown is off (streaming agent reply).
 static func refresh_rich_text(rich_text: RichTextLabel, entry: ChatEntry, incremental: bool = false) -> void:
 	## Thinking / Result use their own preview rules; other kinds honor MarkdownToggle.
-	if entry.kind == ChatEntry.KIND_THINKING:
-		ThinkingBubble.on_stream_delta(rich_text, entry)
-		return
-	if entry.kind == ChatEntry.KIND_RESULT:
-		ResultBubble.refresh(rich_text, entry)
+	if entry.kind == ChatEntry.KIND_THINKING or entry.kind == ChatEntry.KIND_RESULT:
+		ChatBubblePreview.apply(rich_text, entry.body)
 		return
 	rich_text.visible = StringUtils.is_not_blank(entry.body)
 	var markdown_enabled := MarkdownToggle.markdown_enabled_for_entry(entry)

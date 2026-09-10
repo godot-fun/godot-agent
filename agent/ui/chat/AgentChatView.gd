@@ -120,10 +120,8 @@ func on_markdown_changed(_enabled: bool) -> void:
 		if rich_text == null:
 			continue
 		match entry.kind:
-			ChatEntry.KIND_THINKING:
-				ThinkingBubble.refresh(rich_text, entry)
-			ChatEntry.KIND_RESULT:
-				ResultBubble.refresh(rich_text, entry)
+			ChatEntry.KIND_THINKING, ChatEntry.KIND_RESULT:
+				ChatBubblePreview.apply(rich_text, entry.body)
 			ChatEntry.KIND_ERROR:
 				ErrorBubble.refresh(rich_text, entry)
 			_:

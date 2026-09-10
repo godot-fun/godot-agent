@@ -1,10 +1,8 @@
 class_name ResultBubble
 extends Object
 
-## Result bubble — plain text preview (six lines) in chat.
+## Result bubble — plain text preview in chat.
 ## Full text lives on ChatEntry.body; the header ··· button opens it in AgentTextPopup.
-
-const PREVIEW_LINES := 6
 
 
 static func append(
@@ -44,31 +42,14 @@ static func append(
 
 	vbox.add_child(header)
 
-	var rich_text := create_rich_text(StringUtils.last_lines(entry.body, PREVIEW_LINES))
+	var rich_text := create_rich_text(StringUtils.EMPTY)
 	vbox.add_child(rich_text)
 
 	wrapper.set_meta(AgentChatView.META_BUBBLE_RICH_TEXT, rich_text)
 
 	chat_list.add_child(wrapper)
-	refresh(rich_text, entry)
+	ChatBubblePreview.apply(rich_text, entry.body)
 	return rich_text
-
-
-static func refresh(rich_text: RichTextLabel, entry: ChatEntry) -> void:
-	if entry == null or not is_instance_valid(rich_text):
-		return
-	var lines := entry.body.count("\n")
-	var header := rich_text.get_parent().get_child(0) as HBoxContainer
-	var view_button := header.get_child(1) as Button
-	var line_label := header.get_child(2) as Label
-	var show_more := lines > PREVIEW_LINES
-	view_button.visible = show_more
-	line_label.visible = show_more
-	if show_more:
-		line_label.text = StringUtils.format("+{} line{}", lines, "" if lines == 1 else "s")
-	rich_text.text = StringUtils.last_lines(entry.body, PREVIEW_LINES)
-	rich_text.visible = StringUtils.is_not_blank(entry.body)
-	pass
 
 
 static func title_color_for(entry: ChatEntry) -> Color:
