@@ -2,6 +2,7 @@ class_name ChatEntry
 extends RefCounted
 
 const KIND_SYSTEM := "system"
+const KIND_SKILL := "skill"
 const KIND_USER := "user"
 const KIND_AGENT := "agent"
 const KIND_THINKING := "thinking"
@@ -10,6 +11,7 @@ const KIND_RESULT := "result"
 const KIND_ERROR := "error"
 
 const TITLE_SYSTEM := "System"
+const TITLE_SKILL := "Skills"
 const TITLE_USER := "You"
 const TITLE_AGENT := "Agent"
 const TITLE_THINKING := "Thinking"

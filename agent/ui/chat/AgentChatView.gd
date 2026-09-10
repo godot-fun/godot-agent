@@ -234,6 +234,12 @@ func append_entry_bubble(chat_entry: ChatEntry, session_id: int) -> RichTextLabe
 	match chat_entry.kind:
 		ChatEntry.KIND_SYSTEM:
 			rich_text = append_bubble(chat_list, chat_entry, AgentColors.chat_text_muted, AgentColors.system_bubble, AgentColors.system_title)
+		ChatEntry.KIND_SKILL:
+			rich_text = SkillBubble.append(
+					chat_list,
+					chat_entry,
+					build_bubble_style(AgentColors.system_bubble)
+			)
 		ChatEntry.KIND_USER:
 			rich_text = append_bubble(chat_list, chat_entry, AgentColors.chat_text, AgentColors.user_bubble)
 		ChatEntry.KIND_THINKING:

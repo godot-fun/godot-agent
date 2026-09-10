@@ -194,6 +194,18 @@ static func setup_new_chat(session_id: int) -> void:
 		return
 	session.messages.append(ChatMessage.system(system_text))
 	add_chat_entry(session_id, ChatEntry.KIND_SYSTEM, ChatEntry.TITLE_SYSTEM, system_text)
+	if SkillBubble.is_enabled():
+		append_skill_context(session_id, session)
+	pass
+
+
+static func append_skill_context(session_id: int, session: AgentSession) -> void:
+	var readme_text := SkillBubble.load_readme_text()
+	if StringUtils.is_blank(readme_text):
+		return
+	var skill_message := SkillBubble.build_llm_message(readme_text)
+	session.messages.append(ChatMessage.system(skill_message))
+	add_chat_entry(session_id, ChatEntry.KIND_SKILL, ChatEntry.TITLE_SKILL, readme_text)
 	pass
 
 
@@ -202,7 +214,7 @@ static func has_chat_history(session_id: int) -> bool:
 	if session == null:
 		return false
 	for entry in session.chat_entries:
-		if entry.kind != ChatEntry.KIND_SYSTEM:
+		if entry.kind != ChatEntry.KIND_SYSTEM and entry.kind != ChatEntry.KIND_SKILL:
 			return true
 	return false
 
