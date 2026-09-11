@@ -4,6 +4,7 @@ extends Node3D
 ## Rotating holographic rings around the neural core.
 
 var ring_nodes: Array[MeshInstance3D] = []
+var ring_materials: Array[StandardMaterial3D] = []
 var spin_speeds: PackedFloat32Array = PackedFloat32Array([0.35, -0.55, 0.22])
 var target_scale: float = 1.0
 
@@ -29,6 +30,14 @@ func set_tool_mode(enabled: bool) -> void:
 	pass
 
 
+func apply_display_color(color: Color) -> void:
+	for i in ring_materials.size():
+		var mat := ring_materials[i]
+		mat.albedo_color = Color(color.r, color.g, color.b, 0.12 - i * 0.02)
+		mat.emission = Color(color.r * 0.88, color.g * 0.88, color.b * 0.88)
+	pass
+
+
 func build_rings() -> void:
 	var radii: PackedFloat32Array = PackedFloat32Array([1.22, 1.48, 1.72])
 	for i in radii.size():
@@ -47,6 +56,7 @@ func build_rings() -> void:
 		mat.emission = Color(0.0, 0.75, 1.0)
 		mat.emission_energy_multiplier = 0.35 - i * 0.06
 		mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+		ring_materials.append(mat)
 
 		var ring := MeshInstance3D.new()
 		ring.mesh = torus

@@ -17,7 +17,7 @@ var shared_curves: Array[Curve3D] = []
 
 var current_phase: OrbPhase.Phase = OrbPhase.Phase.IDLE
 var current_path_style: OrbPhase.PathStyle = OrbPhase.PathStyle.TRANSVERSE
-var current_color: Color = Color(0.0, 0.92, 1.0)
+var display_color: Color = Color(0.0, 0.92, 1.0)
 var current_tool_name: String = ""
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
@@ -80,10 +80,14 @@ func reset_growth() -> void:
 func set_phase(phase: OrbPhase.Phase, tool_name: String = "") -> void:
 	current_phase = phase
 	current_path_style = OrbPhase.path_style_for(phase)
-	current_color = OrbPhase.color_for(phase)
 	if not tool_name.is_empty():
 		current_tool_name = tool_name
 	refresh_shared_curves()
+	pass
+
+
+func sync_display_color(color: Color) -> void:
+	display_color = color
 	pass
 
 
@@ -185,10 +189,10 @@ func spawn_char(ch: String) -> void:
 	var label: Label3D = free_labels.pop_back()
 	var near_index := rng.randi_range(0, maxi(neuron_net.get_positions().size() - 1, 0))
 	var particle := CharParticle.new()
-	var speed: float = rng.randf_range(0.28, 0.48)
+	var speed: float = rng.randf_range(OrbVisualScale.PARTICLE_SPEED_MIN, OrbVisualScale.PARTICLE_SPEED_MAX)
 	if current_path_style == OrbPhase.PathStyle.CHAOTIC:
-		speed *= 1.35
-	particle.reset(label, acquire_curve(), ch, current_color, speed, near_index)
+		speed *= 1.25
+	particle.reset(label, acquire_curve(), ch, display_color, speed, near_index)
 	active_particles.append(particle)
 	pass
 
@@ -223,11 +227,12 @@ func spawn_keywords(words: Array[String], max_count: int = 3) -> void:
 		while recent_phrases.size() > 48:
 			recent_phrases.pop_front()
 		label.text = word
+		label.set_meta("birth_color", display_color)
 		label.font_size = 22 if word.length() > 14 else 34
 		label.pixel_size = 0.0016 if word.length() > 14 else 0.0022
-		label.modulate = Color(current_color.r, current_color.g, current_color.b, 0.0)
+		label.modulate = Color(display_color.r, display_color.g, display_color.b, 0.0)
 		label.visible = true
-		label.set_meta("life", rng.randf_range(2.2, 4.2))
+		label.set_meta("life", rng.randf_range(OrbVisualScale.KEYWORD_LIFE_MIN, OrbVisualScale.KEYWORD_LIFE_MAX))
 		label.set_meta("age", 0.0)
 		var angle: float = rng.randf() * TAU
 		var radius: float = rng.randf_range(1.15, 1.72)
@@ -250,8 +255,9 @@ func update_keywords(delta: float) -> void:
 		label.set_meta("age", age)
 		var t: float = age / life
 		var alpha: float = sin(clampf(t, 0.0, 1.0) * PI) * 0.75
-		label.modulate = Color(current_color.r, current_color.g, current_color.b, alpha)
-		label.position += Vector3(0.0, delta * 0.06, 0.0)
+		var birth: Color = label.get_meta("birth_color", display_color)
+		label.modulate = Color(birth.r, birth.g, birth.b, alpha)
+		label.position += Vector3(0.0, delta * OrbVisualScale.KEYWORD_DRIFT_SPEED, 0.0)
 		if age >= life:
 			label.visible = false
 	pass

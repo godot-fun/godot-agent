@@ -128,7 +128,7 @@ func pulse_random(strength: float = 0.8) -> void:
 	pass
 
 
-func set_phase_color(color: Color) -> void:
+func apply_display_color(color: Color) -> void:
 	if neuron_shader != null:
 		neuron_shader.set_shader_parameter("base_color", Color(color.r, color.g, color.b, 0.85))
 	if filament_shader != null:

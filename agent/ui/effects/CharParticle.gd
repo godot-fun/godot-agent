@@ -6,7 +6,7 @@ extends RefCounted
 var label: Label3D
 var curve: Curve3D
 var progress: float = 0.0
-var speed: float = 0.35
+var speed: float = 0.22
 var alive: bool = false
 var color: Color = Color.WHITE
 var near_neuron_index: int = -1

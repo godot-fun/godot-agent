@@ -11,6 +11,7 @@ var phase: OrbPhase.Phase = OrbPhase.Phase.IDLE
 var spin_speed: float = 0.7
 var wobble: float = 0.0
 var stream_char_total: int = 0
+var color_controller: OrbColorController = OrbColorController.new()
 
 var pending_chars: Array[String] = []
 var growth_dirty: bool = false
@@ -28,6 +29,8 @@ func _ready() -> void:
 	char_overlay = JarvisOrbCharOverlay.new()
 	char_overlay.setup(neuron_net)
 	add_child(char_overlay)
+	color_controller.snap_to(OrbPhase.color_for(OrbPhase.Phase.AWAKE))
+	apply_display_color()
 	pass
 
 
@@ -39,6 +42,9 @@ func _process(delta: float) -> void:
 		wobble = lerpf(wobble, 0.0, delta * 3.0)
 	rotation.x = sin(Time.get_ticks_msec() * 0.0012) * wobble
 
+	color_controller.update(delta)
+	apply_display_color()
+
 	if growth_flush_timer > 0.0:
 		growth_flush_timer = maxf(0.0, growth_flush_timer - delta)
 		if growth_flush_timer <= 0.0 and growth_dirty:
@@ -48,8 +54,7 @@ func _process(delta: float) -> void:
 
 func set_phase(new_phase: OrbPhase.Phase, tool_name: String = "") -> void:
 	phase = new_phase
-	var color: Color = OrbPhase.color_for(new_phase)
-	neuron_net.set_phase_color(color)
+	color_controller.set_target(OrbPhase.color_for(new_phase))
 	char_overlay.set_phase(new_phase, tool_name)
 	rings.set_tool_mode(new_phase == OrbPhase.Phase.TOOL_EXEC)
 	match new_phase:
@@ -100,9 +105,18 @@ func apply_growth() -> void:
 	pass
 
 
+func apply_display_color() -> void:
+	var color: Color = color_controller.display_color
+	neuron_net.apply_display_color(color)
+	rings.apply_display_color(color)
+	char_overlay.sync_display_color(color)
+	pass
+
+
 func reset_growth() -> void:
 	if growth_dirty:
 		flush_growth()
+	color_controller.snap_to(OrbPhase.color_for(OrbPhase.Phase.IDLE))
 	stream_char_total = 0
 	pending_chars.clear()
 	growth_dirty = false
