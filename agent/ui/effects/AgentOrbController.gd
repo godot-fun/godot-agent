@@ -168,7 +168,6 @@ func on_message_update(session_id: int, chunk: String, stream_kind: String) -> v
 	elif phase != OrbPhase.Phase.TOOL_EXEC:
 		transition_to(OrbPhase.Phase.GENERATING)
 	jarvis_orb.add_stream_chunk(chunk)
-	jarvis_orb.neuron_net.pulse_random(0.35)
 	pass
 
 

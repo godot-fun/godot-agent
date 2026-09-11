@@ -12,6 +12,10 @@ var spin_speed: float = 0.7
 var wobble: float = 0.0
 var stream_char_total: int = 0
 
+var pending_chars: Array[String] = []
+var growth_dirty: bool = false
+var growth_flush_timer: float = 0.0
+
 
 func _ready() -> void:
 	scale = Vector3.ONE * OrbVisualScale.WORLD_SCALE
@@ -34,6 +38,11 @@ func _process(delta: float) -> void:
 	else:
 		wobble = lerpf(wobble, 0.0, delta * 3.0)
 	rotation.x = sin(Time.get_ticks_msec() * 0.0012) * wobble
+
+	if growth_flush_timer > 0.0:
+		growth_flush_timer = maxf(0.0, growth_flush_timer - delta)
+		if growth_flush_timer <= 0.0 and growth_dirty:
+			flush_growth()
 	pass
 
 
@@ -62,9 +71,21 @@ func add_step_text(text: String) -> void:
 		return
 	stream_char_total += text.length()
 	var cap := OrbGrowth.chunk_char_cap(stream_char_total)
-	char_overlay.enqueue_chars(CharStreamUtils.extract_spawn_chars(text, cap))
-	char_overlay.spawn_step_phrases(text)
-	apply_growth()
+	for ch in CharStreamUtils.extract_spawn_chars(text, cap):
+		pending_chars.append(ch)
+	char_overlay.queue_step_phrases(text)
+	growth_dirty = true
+	growth_flush_timer = OrbGrowth.TEXT_BATCH_INTERVAL_S
+	pass
+
+
+func flush_growth() -> void:
+	growth_dirty = false
+	if not pending_chars.is_empty():
+		char_overlay.enqueue_chars(pending_chars)
+		pending_chars.clear()
+	char_overlay.apply_growth(stream_char_total)
+	neuron_net.apply_growth(stream_char_total)
 	pass
 
 
@@ -74,13 +95,18 @@ func add_stream_chunk(chunk: String) -> void:
 
 
 func apply_growth() -> void:
-	neuron_net.apply_growth(stream_char_total)
 	char_overlay.apply_growth(stream_char_total)
+	neuron_net.apply_growth(stream_char_total)
 	pass
 
 
 func reset_growth() -> void:
+	if growth_dirty:
+		flush_growth()
 	stream_char_total = 0
+	pending_chars.clear()
+	growth_dirty = false
+	growth_flush_timer = 0.0
 	neuron_net.reset_growth()
 	char_overlay.reset_growth()
 	pass
@@ -93,6 +119,7 @@ func enqueue_stream_chars(chars: Array[String]) -> void:
 
 
 func clear_stream_queue() -> void:
+	pending_chars.clear()
 	if char_overlay != null:
 		char_overlay.clear_queue()
 	pass

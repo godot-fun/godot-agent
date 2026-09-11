@@ -3,14 +3,18 @@ extends Node3D
 
 ## Character-level particle stream rendered as Label3D billboards.
 
-const POOL_SIZE := 520
+const POOL_SIZE := 320
 const KEYWORD_POOL := 48
+const SHARED_CURVE_COUNT := 20
+const CHAR_QUEUE_CAP := 900
 
 var neuron_net: JarvisOrbNeuronNet
 var char_queue: Array[String] = []
 var active_particles: Array[CharParticle] = []
 var free_labels: Array[Label3D] = []
 var keyword_labels: Array[Label3D] = []
+var shared_curves: Array[Curve3D] = []
+
 var current_phase: OrbPhase.Phase = OrbPhase.Phase.IDLE
 var current_path_style: OrbPhase.PathStyle = OrbPhase.PathStyle.TRANSVERSE
 var current_color: Color = Color(0.0, 0.92, 1.0)
@@ -22,12 +26,16 @@ var max_active: int = OrbGrowth.PARTICLE_CAP_MIN
 var spawn_per_frame: int = OrbGrowth.SPAWN_FRAME_MIN
 var recent_phrases: Array[String] = []
 
+var pending_phrase_text := ""
+var phrase_batch_timer: float = 0.0
+
 
 func setup(net: JarvisOrbNeuronNet) -> void:
 	neuron_net = net
 	rng.randomize()
 	build_label_pool()
 	build_keyword_pool()
+	refresh_shared_curves()
 	pass
 
 
@@ -35,11 +43,17 @@ func _process(delta: float) -> void:
 	spawn_from_queue()
 	update_particles(delta)
 	update_keywords(delta)
+	if phrase_batch_timer > 0.0:
+		phrase_batch_timer = maxf(0.0, phrase_batch_timer - delta)
+		if phrase_batch_timer <= 0.0:
+			flush_phrase_batch()
 	pass
 
 
 func enqueue_chars(chars: Array[String]) -> void:
 	for ch in chars:
+		if char_queue.size() >= CHAR_QUEUE_CAP:
+			char_queue.pop_front()
 		char_queue.append(ch)
 	pass
 
@@ -56,7 +70,10 @@ func reset_growth() -> void:
 	max_active = OrbGrowth.PARTICLE_CAP_MIN
 	spawn_per_frame = OrbGrowth.SPAWN_FRAME_MIN
 	recent_phrases.clear()
+	pending_phrase_text = ""
+	phrase_batch_timer = 0.0
 	clear_queue()
+	refresh_shared_curves()
 	pass
 
 
@@ -66,15 +83,25 @@ func set_phase(phase: OrbPhase.Phase, tool_name: String = "") -> void:
 	current_color = OrbPhase.color_for(phase)
 	if not tool_name.is_empty():
 		current_tool_name = tool_name
+	refresh_shared_curves()
 	pass
 
 
-func spawn_step_phrases(text: String) -> void:
+func queue_step_phrases(text: String) -> void:
 	if text.is_empty():
+		return
+	pending_phrase_text += text
+	phrase_batch_timer = OrbGrowth.TEXT_BATCH_INTERVAL_S
+	pass
+
+
+func flush_phrase_batch() -> void:
+	if pending_phrase_text.is_empty():
 		return
 	var cap := OrbGrowth.stream_keyword_cap(stream_char_total)
 	cap = maxi(cap, OrbGrowth.keyword_burst(stream_char_total))
-	var phrases := CharStreamUtils.extract_step_phrases(text, cap)
+	var phrases := CharStreamUtils.extract_step_phrases(pending_phrase_text, cap)
+	pending_phrase_text = ""
 	if phrases.is_empty():
 		return
 	spawn_keywords(phrases, phrases.size())
@@ -83,6 +110,23 @@ func spawn_step_phrases(text: String) -> void:
 
 func clear_queue() -> void:
 	char_queue.clear()
+	pass
+
+
+func refresh_shared_curves() -> void:
+	shared_curves.clear()
+	if neuron_net == null:
+		return
+	var neurons := neuron_net.get_positions()
+	var styles: Array[OrbPhase.PathStyle] = [
+		OrbPhase.PathStyle.TRANSVERSE,
+		OrbPhase.PathStyle.SPIRAL_IN,
+		OrbPhase.PathStyle.ORBIT,
+		OrbPhase.PathStyle.CHAOTIC,
+	]
+	for _i in SHARED_CURVE_COUNT:
+		var style: OrbPhase.PathStyle = styles[rng.randi_range(0, styles.size() - 1)]
+		shared_curves.append(CharStreamUtils.build_curve(style, neurons, rng))
 	pass
 
 
@@ -127,20 +171,25 @@ func spawn_from_queue() -> void:
 	pass
 
 
+func acquire_curve() -> Curve3D:
+	if shared_curves.is_empty():
+		refresh_shared_curves()
+	if shared_curves.is_empty():
+		return CharStreamUtils.build_curve(current_path_style, neuron_net.get_positions(), rng)
+	return shared_curves[rng.randi_range(0, shared_curves.size() - 1)]
+
+
 func spawn_char(ch: String) -> void:
 	if neuron_net == null or free_labels.is_empty():
 		return
 	var label: Label3D = free_labels.pop_back()
-	var neurons := neuron_net.get_positions()
-	var curve := CharStreamUtils.build_curve(current_path_style, neurons, rng)
-	var near_index := rng.randi_range(0, maxi(neurons.size() - 1, 0))
+	var near_index := rng.randi_range(0, maxi(neuron_net.get_positions().size() - 1, 0))
 	var particle := CharParticle.new()
 	var speed: float = rng.randf_range(0.28, 0.48)
 	if current_path_style == OrbPhase.PathStyle.CHAOTIC:
 		speed *= 1.35
-	particle.reset(label, curve, ch, current_color, speed, near_index)
+	particle.reset(label, acquire_curve(), ch, current_color, speed, near_index)
 	active_particles.append(particle)
-	neuron_net.pulse_neuron(near_index, 0.55)
 	pass
 
 
@@ -149,8 +198,6 @@ func update_particles(delta: float) -> void:
 	while i < active_particles.size():
 		var particle := active_particles[i]
 		if particle.update(delta):
-			if particle.progress > 0.35 and particle.progress < 0.55 and neuron_net != null:
-				neuron_net.pulse_neuron(particle.near_neuron_index, 0.25)
 			i += 1
 			continue
 		free_labels.append(particle.label)
