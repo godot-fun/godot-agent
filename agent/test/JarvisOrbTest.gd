@@ -177,7 +177,6 @@ func run_full_demo(gen: int) -> void:
 		"demo-tool-1",
 		ReadTool.NAME,
 		result,
-		false,
 	)
 	await wait_demo(0.5, gen)
 
