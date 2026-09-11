@@ -108,7 +108,9 @@ static func async_chat_messages_stream(messages: Array[ChatMessage], tools: Arra
 		consume_sse_buffer_tools(tail + "\n", content_build, tool_calls_acc, on_delta)
 	result.content = content_build.build_string()
 	result.tool_calls = filter_tool_calls(tool_calls_acc)
-	result.finish_reason = extract_finish_reason(response.get_body_string())
+	var body := response.get_body_string()
+	result.finish_reason = extract_finish_reason(body)
+	result.usage = extract_stream_usage(body)
 	return result
 
 static func filter_tool_calls(raw_calls: Variant) -> Array[OpenAiToolCall]:
@@ -153,6 +155,23 @@ static func extract_finish_reason(body: String) -> String:
 			finish_reason = chunk.choices[0].finish_reason
 	return finish_reason
 
+
+static func extract_stream_usage(body: String) -> OpenAiUsage:
+	var usage := OpenAiUsage.new()
+	if StringUtils.is_blank(body):
+		return usage
+	for line: String in body.split("\n", false):
+		line = line.strip_edges()
+		if line.is_empty() or not line.begins_with("data:"):
+			continue
+		var payload := StringUtils.substring_after(line, "data:").strip_edges()
+		if payload.to_upper() == "[DONE]":
+			continue
+		var chunk: OpenAiStreamChunk = JsonUtils.json_to_object(payload, OpenAiStreamChunk)
+		if chunk != null and chunk.usage.has_data():
+			usage = chunk.usage
+	return usage
+
 # ----------------------------------------------------------------------------------------------------------------------
 const STREAM_KIND_CONTENT := "content"
 const STREAM_KIND_REASONING := "reasoning"
@@ -179,10 +198,19 @@ static func consume_sse_buffer_tools(buffer: String, text_build: StringBuilder, 
 		if choice.delta != null:
 			if StringUtils.is_not_empty(choice.delta.content):
 				text_build.append(choice.delta.content)
-				if on_delta.is_valid():
-					on_delta.call(choice.delta.content, STREAM_KIND_CONTENT)
+				emit_stream_delta(on_delta, choice.delta.content, STREAM_KIND_CONTENT)
 			if StringUtils.is_not_empty(choice.delta.reasoning_content):
-				if on_delta.is_valid():
-					on_delta.call(choice.delta.reasoning_content, STREAM_KIND_REASONING)
+				emit_stream_delta(on_delta, choice.delta.reasoning_content, STREAM_KIND_REASONING)
 			OpenAiToolCall.merge_stream_deltas(tool_calls_acc, choice.delta.tool_calls)
 	return remaining
+
+
+## 1-arg callbacks receive content deltas only; 2-arg callbacks also receive reasoning.
+static func emit_stream_delta(on_delta: Callable, delta: String, stream_kind: String) -> void:
+	if not on_delta.is_valid():
+		return
+	if on_delta.get_argument_count() >= 2:
+		on_delta.call(delta, stream_kind)
+	elif stream_kind == STREAM_KIND_CONTENT:
+		on_delta.call(delta)
+	pass

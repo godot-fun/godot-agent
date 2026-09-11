@@ -45,6 +45,26 @@ func consume_sse_buffer_tools_on_delta_test() -> void:
 	pass
 
 
+func consume_sse_buffer_tools_reasoning_one_arg_on_delta_test() -> void:
+	var text_build := StringBuilder.new()
+	var tool_calls_acc: Array[OpenAiToolCall] = []
+	var deltas: Array[String] = []
+	var on_delta := func(delta: String) -> void:
+		deltas.append(delta)
+		pass
+	OpenAiClient.consume_sse_buffer_tools(
+		"data: {\"choices\":[{\"delta\":{\"reasoning_content\":\"think\"}}]}\n"
+		+ "data: {\"choices\":[{\"delta\":{\"content\":\"OK\"}}]}\n",
+		text_build,
+		tool_calls_acc,
+		on_delta
+	)
+	assert(text_build.build_string() == "OK")
+	assert(deltas.size() == 1)
+	assert(deltas[0] == "OK")
+	pass
+
+
 func consume_sse_buffer_tools_reasoning_on_delta_test() -> void:
 	var text_build := StringBuilder.new()
 	var tool_calls_acc: Array[OpenAiToolCall] = []
@@ -146,6 +166,18 @@ func build_request_json_test() -> void:
 	assert(json.contains("\"max_tokens\": 8192"))
 	assert(json.contains("\"content\": \"hello\""))
 	assert(json.contains("\"name\": \"read\""))
+	pass
+
+
+func extract_stream_usage_test() -> void:
+	var body := (
+		"data: {\"choices\":[{\"delta\":{\"content\":\"OK\"}}]}\n\n"
+		+ "data: {\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}],"
+		+ "\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":5,\"total_tokens\":17}}\n"
+	)
+	assert(OpenAiClient.extract_stream_usage(body).total_tokens == 17)
+	assert(OpenAiClient.extract_stream_usage(body).prompt_tokens == 12)
+	assert(OpenAiClient.extract_stream_usage(body).completion_tokens == 5)
 	pass
 
 

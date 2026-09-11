@@ -20,3 +20,4 @@ class Choice:
 var id: String = ""
 var model: String = ""
 var choices: Array[Choice] = []
+var usage: OpenAiUsage = OpenAiUsage.new()
