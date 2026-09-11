@@ -356,11 +356,8 @@ static func on_message_complete(session_id: int, usage: OpenAiUsage) -> void:
 	if not usage.has_data():
 		return
 	var session := AgentSessionStore.load_session(session_id)
-	if session == null:
-		return
-	session.usage.prompt_tokens += usage.prompt_tokens
-	session.usage.completion_tokens += usage.completion_tokens
-	session.usage.total_tokens += usage.total_tokens
+	if session != null:
+		session.usage.copy_from(usage)
 	pass
 
 

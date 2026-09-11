@@ -11,7 +11,7 @@ extends Control
 @onready var sidebar_title: Label = $Root/Body/Sidebar/SidebarVBox/SidebarTitle
 @onready var chat_scroll: ScrollContainer = $Root/Body/ChatArea/ChatScroll
 @onready var chat_host: MarginContainer = $Root/Body/ChatArea/ChatScroll/ChatMargin
-@onready var token_usage_label: Label = $Root/Toolbar/ToolbarRow/TokenUsageLabel
+@onready var token_usage_wrap: PanelContainer = $Root/Toolbar/ToolbarRow/TokenUsageWrap
 @onready var skill_toggle_button: Button = $Root/Toolbar/ToolbarRow/SkillToggleWrap/SkillToggleButton
 @onready var markdown_toggle_button: Button = $Root/Toolbar/ToolbarRow/MarkdownToggleWrap/MarkdownToggleButton
 @onready var input_bar: Control = $Root/Body/ChatArea/InputBar
@@ -41,7 +41,7 @@ func _ready() -> void:
 	toolbar.setup(toolbar_panel, toolbar_title, project_button)
 	session_sidebar.setup(session_list, new_session_button, sidebar_title, sidebar_panel)
 	chat_area.setup(chat_area_panel, self)
-	token_usage_display.setup(token_usage_label)
+	token_usage_display.setup(token_usage_wrap)
 	skill_bubble.setup_toggle(skill_toggle_button)
 	markdown_toggle.setup(markdown_toggle_button)
 	chat_view.setup(chat_scroll, chat_host)

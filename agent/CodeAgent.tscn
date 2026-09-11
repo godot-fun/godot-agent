@@ -41,12 +41,18 @@ mouse_default_cursor_shape = 2
 text = "project"
 flat = true
 
-[node name="TokenUsageLabel" type="Label" parent="Root/Toolbar/ToolbarRow"]
+[node name="TokenUsageWrap" type="PanelContainer" parent="Root/Toolbar/ToolbarRow"]
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-theme_override_font_sizes/font_size = 11
+
+[node name="TokenUsageLabel" type="Label" parent="Root/Toolbar/ToolbarRow/TokenUsageWrap"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
 text = "0 tokens"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="SkillToggleWrap" type="MarginContainer" parent="Root/Toolbar/ToolbarRow"]
 layout_mode = 2
