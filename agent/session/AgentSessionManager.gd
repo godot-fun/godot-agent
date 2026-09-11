@@ -26,6 +26,7 @@ static func _static_init() -> void:
 	# Turn & streaming
 	AgentEvents.events.turn_start.connect(on_turn_start)
 	AgentEvents.events.message_update.connect(on_message_update)
+	AgentEvents.events.message_complete.connect(on_message_complete)
 
 	# Tool execution
 	AgentEvents.events.tool_execution_start.connect(on_tool_execution_start)
@@ -348,6 +349,18 @@ static func on_message_update(session_id: int, chunk: String, stream_kind: Strin
 	if entry == null:
 		return
 	AgentEvents.events.chat_entry_update.emit(session_id, entry, stream_kind)
+	pass
+
+
+static func on_message_complete(session_id: int, usage: OpenAiUsage) -> void:
+	if not usage.has_data():
+		return
+	var session := AgentSessionStore.load_session(session_id)
+	if session == null:
+		return
+	session.usage.prompt_tokens += usage.prompt_tokens
+	session.usage.completion_tokens += usage.completion_tokens
+	session.usage.total_tokens += usage.total_tokens
 	pass
 
 

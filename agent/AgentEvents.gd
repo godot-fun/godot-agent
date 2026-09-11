@@ -7,6 +7,7 @@ extends RefCounted
 # ├─ agent_start              # whole run begins
 # │   ├─ turn_start           # one LLM round + tools
 # │   │   ├─ message_update   (assistant streaming)
+# │   │   ├─ message_complete (assistant response received)
 # │   │   ├─ tool_execution_start
 # │   │   └─ tool_execution_end
 # │   └─ turn_end
@@ -27,6 +28,7 @@ class Events:
 
 	# Message lifecycle
 	signal message_update(session_id: int, chunk: String, stream_kind: String)
+	signal message_complete(session_id: int, usage: OpenAiUsage)
 
 	# Tool execution lifecycle
 	signal tool_execution_start(session_id: int, tool_call_id: String, tool_name: String, args: Dictionary[String, String])

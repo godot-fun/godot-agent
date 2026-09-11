@@ -17,6 +17,7 @@ static func run(session: AgentSession) -> void:
 		AgentEvents.events.turn_start.emit(session.id)
 		var on_chunk := func(chunk: String, stream_kind: String) -> void: AgentEvents.events.message_update.emit(session.id, chunk, stream_kind)
 		var completion := await OpenAiClient.async_chat_messages_stream(session.messages, AgentToolRegistry.schemas, on_chunk)
+		AgentEvents.events.message_complete.emit(session.id, completion.usage)
 		if completion.has_error():
 			AgentEvents.events.agent_end.emit(session.id, completion.error)
 			return

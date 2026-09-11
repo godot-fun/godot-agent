@@ -7,6 +7,7 @@ var id: int = -1
 var title: String = ""
 var messages: Array[ChatMessage] = []
 var chat_entries: Array[ChatEntry] = []
+var usage: OpenAiUsage = OpenAiUsage.new()
 
 
 func _init(_id: int = -1, _title: String = "New Chat") -> void:
