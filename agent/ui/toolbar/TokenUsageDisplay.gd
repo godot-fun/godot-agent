@@ -10,6 +10,7 @@ extends RefCounted
 ## 0% ── accent→green gradient ──► 50% ── yellow ──► 75% ── orange ──► 90% ── red
 ## ```
 
+## Reference context window for badge color / percentage. Update when switching to a model with a different limit (e.g. GPT-4o 128k vs DeepSeek V4 1M).
 const MAX_CONTEXT_TOKENS := 1_000_000
 const THRESHOLD_WARN := 0.50
 const THRESHOLD_CAUTION := 0.75
