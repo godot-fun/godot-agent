@@ -11,6 +11,7 @@ extends Control
 @onready var sidebar_title: Label = $Root/Body/Sidebar/SidebarVBox/SidebarTitle
 @onready var chat_scroll: ScrollContainer = $Root/Body/ChatArea/ChatScroll
 @onready var chat_host: MarginContainer = $Root/Body/ChatArea/ChatScroll/ChatMargin
+@onready var token_usage_label: Label = $Root/Toolbar/ToolbarRow/TokenUsageLabel
 @onready var skill_toggle_button: Button = $Root/Toolbar/ToolbarRow/SkillToggleWrap/SkillToggleButton
 @onready var markdown_toggle_button: Button = $Root/Toolbar/ToolbarRow/MarkdownToggleWrap/MarkdownToggleButton
 @onready var input_bar: Control = $Root/Body/ChatArea/InputBar
@@ -29,6 +30,7 @@ var chat_input: AgentChatInput = AgentChatInput.new()
 var theme_toggle: ThemeToggle = ThemeToggle.new()
 var log_panel: AgentLogPanel = AgentLogPanel.new()
 var skill_bubble: SkillBubble = SkillBubble.new()
+var token_usage_display: TokenUsageDisplay = TokenUsageDisplay.new()
 var markdown_toggle: MarkdownToggle = MarkdownToggle.new()
 var session_sidebar: AgentSessionSidebar = AgentSessionSidebar.new()
 var chat_view: AgentChatView = AgentChatView.new()
@@ -39,6 +41,7 @@ func _ready() -> void:
 	toolbar.setup(toolbar_panel, toolbar_title, project_button)
 	session_sidebar.setup(session_list, new_session_button, sidebar_title, sidebar_panel)
 	chat_area.setup(chat_area_panel, self)
+	token_usage_display.setup(token_usage_label)
 	skill_bubble.setup_toggle(skill_toggle_button)
 	markdown_toggle.setup(markdown_toggle_button)
 	chat_view.setup(chat_scroll, chat_host)
