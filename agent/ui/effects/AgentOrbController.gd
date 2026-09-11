@@ -3,8 +3,6 @@ extends Control
 
 ## Event-driven Jarvis orb overlay — shows while the active session agent runs.
 
-const ORB_SIZE := OrbVisualScale.VIEWPORT
-
 var running_session_id: int = AgentSessionManager.INVALID_SESSION_ID
 var phase: OrbPhase.Phase = OrbPhase.Phase.IDLE
 var current_tool_name: String = ""
@@ -26,25 +24,17 @@ func _ready() -> void:
 
 
 func build_scene() -> void:
-	vignette = JarvisOrbOverlay.new()
-	vignette.name = "Vignette"
-	add_child(vignette)
-
-	var center := CenterContainer.new()
-	center.name = "Center"
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(center)
-
 	viewport_container = SubViewportContainer.new()
-	viewport_container.custom_minimum_size = ORB_SIZE
+	viewport_container.name = "Viewport"
+	viewport_container.set_anchors_preset(Control.PRESET_FULL_RECT)
+	viewport_container.offset_right = 0.0
+	viewport_container.offset_bottom = 0.0
 	viewport_container.stretch = true
 	viewport_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	center.add_child(viewport_container)
+	add_child(viewport_container)
 
 	sub_viewport = SubViewport.new()
 	sub_viewport.transparent_bg = true
-	sub_viewport.size = ORB_SIZE
 	sub_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	sub_viewport.own_world_3d = true
 	viewport_container.add_child(sub_viewport)
@@ -72,6 +62,10 @@ func build_scene() -> void:
 
 	jarvis_orb = JarvisOrb.new()
 	sub_viewport.add_child(jarvis_orb)
+
+	vignette = JarvisOrbOverlay.new()
+	vignette.name = "Vignette"
+	add_child(vignette)
 	pass
 
 
@@ -86,16 +80,32 @@ func connect_events() -> void:
 	AgentEvents.events.message_complete.connect(on_message_complete)
 	AgentEvents.events.tool_execution_start.connect(on_tool_execution_start)
 	AgentEvents.events.tool_execution_end.connect(on_tool_execution_end)
+	AgentEvents.events.chat_entry_add.connect(on_chat_entry_add)
 	AgentEvents.events.theme_changed.connect(on_theme_changed)
 	pass
 
 
 func on_agent_start(session_id: int) -> void:
 	running_session_id = session_id
+	if jarvis_orb != null:
+		jarvis_orb.reset_growth()
 	if not AgentSessionManager.is_active(session_id):
 		return
 	transition_to(OrbPhase.Phase.AWAKE)
 	show_orb()
+	feed_latest_user_prompt(session_id)
+	pass
+
+
+func feed_latest_user_prompt(session_id: int) -> void:
+	var session := AgentSessionStore.load_session(session_id)
+	if session == null or jarvis_orb == null:
+		return
+	for i in range(session.chat_entries.size() - 1, -1, -1):
+		var entry: ChatEntry = session.chat_entries[i]
+		if entry.kind == ChatEntry.KIND_USER:
+			jarvis_orb.add_step_text(entry.body)
+			return
 	pass
 
 
@@ -157,8 +167,7 @@ func on_message_update(session_id: int, chunk: String, stream_kind: String) -> v
 		transition_to(OrbPhase.Phase.REASONING)
 	elif phase != OrbPhase.Phase.TOOL_EXEC:
 		transition_to(OrbPhase.Phase.GENERATING)
-	var chars: Array[String] = CharStreamUtils.extract_spawn_chars(chunk)
-	jarvis_orb.enqueue_stream_chars(chars)
+	jarvis_orb.add_stream_chunk(chunk)
 	jarvis_orb.neuron_net.pulse_random(0.35)
 	pass
 
@@ -170,19 +179,32 @@ func on_message_complete(session_id: int, _usage: OpenAiUsage) -> void:
 	pass
 
 
-func on_tool_execution_start(session_id: int, _tool_call_id: String, tool_name: String, _args: Dictionary[String, String]) -> void:
+func on_tool_execution_start(session_id: int, _tool_call_id: String, tool_name: String, args: Dictionary[String, String]) -> void:
 	if not _should_handle(session_id):
 		return
 	current_tool_name = tool_name
 	transition_to(OrbPhase.Phase.TOOL_EXEC, tool_name)
+	var body := AgentSessionManager.format_tool_body(tool_name, args)
+	jarvis_orb.add_step_text(body)
 	pass
 
 
-func on_tool_execution_end(session_id: int, _tool_call_id: String, _tool_name: String, _result: String) -> void:
+func on_tool_execution_end(session_id: int, _tool_call_id: String, tool_name: String, result: String) -> void:
 	if not _should_handle(session_id):
 		return
+	if StringUtils.is_not_empty(result):
+		var snippet := result if result.length() <= 180 else result.substr(0, 180)
+		jarvis_orb.add_step_text(snippet)
 	if phase == OrbPhase.Phase.TOOL_EXEC:
 		transition_to(OrbPhase.Phase.AWAKE)
+	pass
+
+
+func on_chat_entry_add(session_id: int, entry: ChatEntry) -> void:
+	if session_id != running_session_id or not _should_handle(session_id):
+		return
+	if entry.kind == ChatEntry.KIND_ERROR:
+		jarvis_orb.add_step_text(entry.body)
 	pass
 
 
@@ -202,13 +224,11 @@ func transition_to(new_phase: OrbPhase.Phase, tool_name: String = "") -> void:
 func show_orb() -> void:
 	show_orb_immediate()
 	modulate.a = 0.0
-	scale = Vector2(0.72, 0.72)
 	if fade_tween != null and fade_tween.is_valid():
 		fade_tween.kill()
 	fade_tween = create_tween()
 	fade_tween.set_parallel(true)
 	fade_tween.tween_property(self, "modulate:a", 0.88, 0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	fade_tween.tween_property(self, "scale", Vector2.ONE, 0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	if vignette != null:
 		var target: float = 0.45 if AgentColors.is_dark() else 0.22
 		fade_tween.tween_method(vignette.set_strength, 0.0, target, 0.45)
@@ -230,7 +250,6 @@ func hide_orb() -> void:
 	fade_tween = create_tween()
 	fade_tween.set_parallel(true)
 	fade_tween.tween_property(self, "modulate:a", 0.0, 0.55)
-	fade_tween.tween_property(self, "scale", Vector2(0.92, 0.92), 0.55)
 	if vignette != null:
 		fade_tween.tween_method(vignette.set_strength, vignette.color.a, 0.0, 0.55)
 	fade_tween.chain().tween_callback(hide_orb_immediate)
@@ -245,6 +264,7 @@ func hide_orb_immediate() -> void:
 		vignette.set_strength(0.0)
 	if jarvis_orb != null:
 		jarvis_orb.clear_stream_queue()
+		jarvis_orb.reset_growth()
 		jarvis_orb.set_phase(OrbPhase.Phase.IDLE)
 	pass
 

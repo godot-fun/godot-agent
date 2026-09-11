@@ -3,10 +3,8 @@ extends Node3D
 
 ## Character-level particle stream rendered as Label3D billboards.
 
-const POOL_SIZE := 220
-const MAX_ACTIVE := 180
-const SPAWN_PER_FRAME := 10
-const KEYWORD_POOL := 12
+const POOL_SIZE := 520
+const KEYWORD_POOL := 48
 
 var neuron_net: JarvisOrbNeuronNet
 var char_queue: Array[String] = []
@@ -16,7 +14,13 @@ var keyword_labels: Array[Label3D] = []
 var current_phase: OrbPhase.Phase = OrbPhase.Phase.IDLE
 var current_path_style: OrbPhase.PathStyle = OrbPhase.PathStyle.TRANSVERSE
 var current_color: Color = Color(0.0, 0.92, 1.0)
+var current_tool_name: String = ""
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+
+var stream_char_total: int = 0
+var max_active: int = OrbGrowth.PARTICLE_CAP_MIN
+var spawn_per_frame: int = OrbGrowth.SPAWN_FRAME_MIN
+var recent_phrases: Array[String] = []
 
 
 func setup(net: JarvisOrbNeuronNet) -> void:
@@ -40,12 +44,40 @@ func enqueue_chars(chars: Array[String]) -> void:
 	pass
 
 
+func apply_growth(char_total: int) -> void:
+	stream_char_total = char_total
+	max_active = OrbGrowth.particle_cap(char_total)
+	spawn_per_frame = OrbGrowth.spawn_per_frame(char_total)
+	pass
+
+
+func reset_growth() -> void:
+	stream_char_total = 0
+	max_active = OrbGrowth.PARTICLE_CAP_MIN
+	spawn_per_frame = OrbGrowth.SPAWN_FRAME_MIN
+	recent_phrases.clear()
+	clear_queue()
+	pass
+
+
 func set_phase(phase: OrbPhase.Phase, tool_name: String = "") -> void:
 	current_phase = phase
 	current_path_style = OrbPhase.path_style_for(phase)
 	current_color = OrbPhase.color_for(phase)
-	if phase == OrbPhase.Phase.TOOL_EXEC or phase == OrbPhase.Phase.REASONING or phase == OrbPhase.Phase.GENERATING:
-		spawn_keywords(OrbPhase.keywords_for(phase, tool_name))
+	if not tool_name.is_empty():
+		current_tool_name = tool_name
+	pass
+
+
+func spawn_step_phrases(text: String) -> void:
+	if text.is_empty():
+		return
+	var cap := OrbGrowth.stream_keyword_cap(stream_char_total)
+	cap = maxi(cap, OrbGrowth.keyword_burst(stream_char_total))
+	var phrases := CharStreamUtils.extract_step_phrases(text, cap)
+	if phrases.is_empty():
+		return
+	spawn_keywords(phrases, phrases.size())
 	pass
 
 
@@ -86,7 +118,7 @@ func build_keyword_pool() -> void:
 
 func spawn_from_queue() -> void:
 	var spawned: int = 0
-	while not char_queue.is_empty() and spawned < SPAWN_PER_FRAME and active_particles.size() < MAX_ACTIVE:
+	while not char_queue.is_empty() and spawned < spawn_per_frame and active_particles.size() < max_active:
 		if free_labels.is_empty():
 			break
 		var ch: String = char_queue.pop_front()
@@ -126,21 +158,29 @@ func update_particles(delta: float) -> void:
 	pass
 
 
-func spawn_keywords(words: Array[String]) -> void:
+func spawn_keywords(words: Array[String], max_count: int = 3) -> void:
 	var available: Array[Label3D] = []
 	for label in keyword_labels:
 		if not label.visible:
 			available.append(label)
 	if available.is_empty():
 		return
+	var spawned: int = 0
 	for word in words:
-		if available.is_empty():
+		if available.is_empty() or spawned >= max_count:
 			break
+		if recent_phrases.has(word):
+			continue
 		var label: Label3D = available.pop_back()
+		recent_phrases.append(word)
+		while recent_phrases.size() > 48:
+			recent_phrases.pop_front()
 		label.text = word
+		label.font_size = 22 if word.length() > 14 else 34
+		label.pixel_size = 0.0016 if word.length() > 14 else 0.0022
 		label.modulate = Color(current_color.r, current_color.g, current_color.b, 0.0)
 		label.visible = true
-		label.set_meta("life", rng.randf_range(2.2, 3.6))
+		label.set_meta("life", rng.randf_range(2.2, 4.2))
 		label.set_meta("age", 0.0)
 		var angle: float = rng.randf() * TAU
 		var radius: float = rng.randf_range(1.15, 1.72)
@@ -150,6 +190,7 @@ func spawn_keywords(words: Array[String]) -> void:
 			sin(angle) * radius * 0.55
 		)
 		label.rotation.y = angle
+		spawned += 1
 	pass
 
 

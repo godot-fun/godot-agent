@@ -1,14 +1,15 @@
 class_name JarvisOrbNeuronNet
 extends Node3D
 
-## Brain-shaped neuron point cloud + synapse filaments.
+## Brain-shaped neuron point cloud + synapse filaments — grows with stream volume.
 
-const NEURON_COUNT := 900
 const NEIGHBORS := 3
 const MAX_EDGE_DIST := 0.55
 
 var neuron_positions: PackedVector3Array = PackedVector3Array()
 var pulse_levels: PackedFloat32Array = PackedFloat32Array()
+var current_neuron_count: int = 0
+var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 var multimesh_instance: MultiMeshInstance3D
 var filament_mesh: MeshInstance3D
@@ -17,11 +18,8 @@ var filament_shader: ShaderMaterial
 
 
 func _ready() -> void:
-	neuron_positions = generate_brain_points(NEURON_COUNT)
-	pulse_levels.resize(neuron_positions.size())
-	pulse_levels.fill(0.0)
-	build_neurons()
-	build_filaments()
+	rng.randomize()
+	rebuild_neurons(OrbGrowth.NEURON_MIN)
 	pass
 
 
@@ -41,6 +39,21 @@ func get_positions() -> PackedVector3Array:
 	return neuron_positions
 
 
+func apply_growth(char_count: int) -> void:
+	var target := OrbGrowth.neuron_count(char_count)
+	if current_neuron_count > 0 and target < current_neuron_count + OrbGrowth.NEURON_REBUILD_STEP:
+		return
+	if target == current_neuron_count:
+		return
+	rebuild_neurons(target)
+	pass
+
+
+func reset_growth() -> void:
+	rebuild_neurons(OrbGrowth.NEURON_MIN)
+	pass
+
+
 func pulse_neuron(index: int, strength: float = 1.0) -> void:
 	if index < 0 or index >= pulse_levels.size():
 		return
@@ -51,7 +64,6 @@ func pulse_neuron(index: int, strength: float = 1.0) -> void:
 func pulse_random(strength: float = 0.8) -> void:
 	if neuron_positions.is_empty():
 		return
-	var rng := RandomNumberGenerator.new()
 	pulse_neuron(rng.randi_range(0, neuron_positions.size() - 1), strength)
 	pass
 
@@ -64,6 +76,27 @@ func set_phase_color(color: Color) -> void:
 	pass
 
 
+func rebuild_neurons(count: int) -> void:
+	clear_meshes()
+	current_neuron_count = count
+	neuron_positions = generate_brain_points(count)
+	pulse_levels.resize(neuron_positions.size())
+	pulse_levels.fill(0.0)
+	build_neurons()
+	build_filaments()
+	pass
+
+
+func clear_meshes() -> void:
+	if multimesh_instance != null:
+		multimesh_instance.queue_free()
+		multimesh_instance = null
+	if filament_mesh != null:
+		filament_mesh.queue_free()
+		filament_mesh = null
+	pass
+
+
 func build_neurons() -> void:
 	var sphere := SphereMesh.new()
 	sphere.radius = 0.018
@@ -71,8 +104,9 @@ func build_neurons() -> void:
 	sphere.radial_segments = 6
 	sphere.rings = 4
 
-	neuron_shader = ShaderMaterial.new()
-	neuron_shader.shader = load("res://agent/ui/effects/shaders/jarvis_neuron.gdshader") as Shader
+	if neuron_shader == null:
+		neuron_shader = ShaderMaterial.new()
+		neuron_shader.shader = load("res://agent/ui/effects/shaders/jarvis_neuron.gdshader") as Shader
 	neuron_shader.set_shader_parameter("base_color", Color(0.0, 0.9, 1.0, 0.85))
 
 	var multi := MultiMesh.new()
@@ -97,7 +131,6 @@ func build_filaments() -> void:
 	var verts := PackedVector3Array()
 	var uvs := PackedVector2Array()
 	var indices := PackedInt32Array()
-	var edge_index := 0
 	for i in neuron_positions.size():
 		var neighbors := find_neighbors(i)
 		for neighbor_index in neighbors:
@@ -112,7 +145,6 @@ func build_filaments() -> void:
 			uvs.append(Vector2(1.0, 0.0))
 			indices.append(base)
 			indices.append(base + 1)
-			edge_index += 1
 
 	var arrays: Array = []
 	arrays.resize(Mesh.ARRAY_MAX)
@@ -123,8 +155,9 @@ func build_filaments() -> void:
 	var mesh := ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_LINES, arrays)
 
-	filament_shader = ShaderMaterial.new()
-	filament_shader.shader = load("res://agent/ui/effects/shaders/jarvis_filament.gdshader") as Shader
+	if filament_shader == null:
+		filament_shader = ShaderMaterial.new()
+		filament_shader.shader = load("res://agent/ui/effects/shaders/jarvis_filament.gdshader") as Shader
 	filament_shader.set_shader_parameter("line_color", Color(0.0, 1.0, 1.0, 0.42))
 
 	filament_mesh = MeshInstance3D.new()
@@ -136,8 +169,6 @@ func build_filaments() -> void:
 
 func generate_brain_points(count: int) -> PackedVector3Array:
 	var points := PackedVector3Array()
-	var rng := RandomNumberGenerator.new()
-	rng.randomize()
 	for _i in count:
 		var u := rng.randf()
 		var v := rng.randf()

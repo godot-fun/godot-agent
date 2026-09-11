@@ -10,6 +10,7 @@ var char_overlay: JarvisOrbCharOverlay
 var phase: OrbPhase.Phase = OrbPhase.Phase.IDLE
 var spin_speed: float = 0.7
 var wobble: float = 0.0
+var stream_char_total: int = 0
 
 
 func _ready() -> void:
@@ -53,6 +54,35 @@ func set_phase(new_phase: OrbPhase.Phase, tool_name: String = "") -> void:
 			spin_speed = 0.7
 	if new_phase != OrbPhase.Phase.IDLE:
 		neuron_net.pulse_random(0.9)
+	pass
+
+
+func add_step_text(text: String) -> void:
+	if text.is_empty():
+		return
+	stream_char_total += text.length()
+	var cap := OrbGrowth.chunk_char_cap(stream_char_total)
+	char_overlay.enqueue_chars(CharStreamUtils.extract_spawn_chars(text, cap))
+	char_overlay.spawn_step_phrases(text)
+	apply_growth()
+	pass
+
+
+func add_stream_chunk(chunk: String) -> void:
+	add_step_text(chunk)
+	pass
+
+
+func apply_growth() -> void:
+	neuron_net.apply_growth(stream_char_total)
+	char_overlay.apply_growth(stream_char_total)
+	pass
+
+
+func reset_growth() -> void:
+	stream_char_total = 0
+	neuron_net.reset_growth()
+	char_overlay.reset_growth()
 	pass
 
 
