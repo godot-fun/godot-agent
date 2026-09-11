@@ -4,14 +4,13 @@ extends RefCounted
 ## Toolbar badge — current context length from the latest LLM request (left of the skill toggle).
 ##
 ## Shows [member OpenAiUsage.prompt_tokens] from the last API call (input context size, not session total).
-## Color follows a traffic-light scale against [constant MAX_CONTEXT_TOKENS]:
+## Color follows a traffic-light scale against [constant MAX_CONTEXT_TOKENS] (DeepSeek V4 1M context):
 ##
 ## ```
 ## 0% ── accent→green gradient ──► 50% ── yellow ──► 75% ── orange ──► 90% ── red
 ## ```
 
-## Reference context window for ratio / badge color (TODO: tie to OpenAiClient.model when known).
-const MAX_CONTEXT_TOKENS := 128_000
+const MAX_CONTEXT_TOKENS := 1_000_000
 const THRESHOLD_WARN := 0.50
 const THRESHOLD_CAUTION := 0.75
 const THRESHOLD_CRITICAL := 0.90
@@ -23,6 +22,7 @@ var label: Label
 func setup(p_wrap: PanelContainer) -> void:
 	wrap = p_wrap
 	label = wrap.get_child(0) as Label
+	wrap.mouse_filter = Control.MOUSE_FILTER_STOP
 	AgentEvents.events.theme_changed.connect(apply_theme)
 	AgentEvents.events.session_selected.connect(refresh)
 	AgentEvents.events.message_complete.connect(on_message_complete)
@@ -49,7 +49,7 @@ func refresh(_session_id: int = AgentSessionManager.active_session_id) -> void:
 	var n := usage.prompt_tokens
 	var ratio := token_ratio(n)
 	label.text = StringUtils.format("{} tokens", format_count(n))
-	label.tooltip_text = StringUtils.format(
+	wrap.tooltip_text = StringUtils.format(
 		"Context: {} ({}%) · Completion: {} · Total: {} (last request)",
 		n,
 		int(round(ratio * 100.0)),
