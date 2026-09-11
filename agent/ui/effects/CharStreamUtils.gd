@@ -4,7 +4,7 @@ extends RefCounted
 ## Chunk → char queue, path templates, and step-text phrase extraction.
 
 const MAX_SPAWN_PER_CHUNK := 8
-const MAX_PHRASE_LEN := 28
+const MAX_PHRASE_LEN := 56
 const MIN_PHRASE_LEN := 2
 const CODE_CHAR_BOOST: Dictionary = {"{": 2, "}": 2, "[": 2, "]": 2, "(": 2, ")": 2, ";": 2, "=": 2, "/": 2}
 
