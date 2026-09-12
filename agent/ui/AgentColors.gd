@@ -10,7 +10,7 @@ enum ColorScheme {
 
 const SETTING_KEY := "agent_dark_theme"
 const THEME_COLOR_SETTING_KEY := "agent_theme_color"
-const DEFAULT_THEME_COLOR := Color(0.05, 0.98, 0.52, 0.58)
+const DEFAULT_THEME_COLOR := Color(0.0, 0.84, 0.68, 0.58)
 
 static var current_scheme: ColorScheme = ColorScheme.DARK
 static var theme_color: Color = DEFAULT_THEME_COLOR
