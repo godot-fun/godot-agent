@@ -29,7 +29,13 @@ func _ready() -> void:
 	char_overlay.setup(neuron_net)
 	add_child(char_overlay)
 	color_controller.snap_to(OrbPhase.color_for(OrbPhase.Phase.AWAKE))
+	AgentEvents.events.theme_color_changed.connect(on_theme_color_changed)
 	apply_display_color()
+	pass
+
+
+func on_theme_color_changed(_color: Color) -> void:
+	color_controller.set_target(OrbPhase.color_for(phase))
 	pass
 
 

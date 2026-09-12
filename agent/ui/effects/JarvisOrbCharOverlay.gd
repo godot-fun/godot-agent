@@ -17,7 +17,7 @@ var shared_curves: Array[Curve3D] = []
 
 var current_phase: OrbPhase.Phase = OrbPhase.Phase.IDLE
 var current_path_style: OrbPhase.PathStyle = OrbPhase.PathStyle.TRANSVERSE
-var display_color: Color = Color(0.0, 0.92, 1.0)
+var display_color: Color = OrbPhase.theme_rgb()
 var current_tool_name: String = ""
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
@@ -145,9 +145,8 @@ func build_label_pool() -> void:
 		apply_orb_font(label)
 		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		label.font_size = 20
-		label.outline_size = 5
+		label.outline_size = 0
 		label.pixel_size = 0.0018
-		label.outline_modulate = Color(0.0, 0.15, 0.25, 0.85)
 		label.modulate = Color(1, 1, 1, 0)
 		label.visible = false
 		add_child(label)
@@ -161,9 +160,8 @@ func build_keyword_pool() -> void:
 		apply_orb_font(label)
 		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		label.font_size = 36
-		label.outline_size = 8
+		label.outline_size = 0
 		label.pixel_size = 0.0022
-		label.outline_modulate = Color(0.0, 0.2, 0.35, 0.9)
 		label.modulate = Color(1, 1, 1, 0)
 		label.visible = false
 		add_child(label)

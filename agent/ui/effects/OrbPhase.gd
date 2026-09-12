@@ -37,19 +37,42 @@ static func path_style_for(phase: Phase) -> PathStyle:
 static func color_for(phase: Phase) -> Color:
 	match phase:
 		Phase.REASONING:
-			return Color(0.66, 0.33, 0.97, 1.0)
+			return phase_color_from_theme(0.72, 0.85, 1.0)
 		Phase.GENERATING:
-			return Color(0.0, 0.92, 1.0, 1.0)
+			return phase_color_from_theme(0.0, 1.05, 1.02)
 		Phase.TOOL_EXEC:
-			return Color(0.96, 0.72, 0.26, 1.0)
+			return phase_color_from_theme(0.12, 0.9, 1.05)
 		Phase.SUCCESS:
-			return Color(0.0, 0.92, 0.63, 1.0)
+			return theme_rgb().lerp(AgentColors.success, 0.45)
 		Phase.ERROR:
-			return Color(1.0, 0.27, 0.4, 1.0)
+			return theme_rgb().lerp(AgentColors.error, 0.55)
 		Phase.AWAKE, Phase.TURN_COOLDOWN:
-			return Color(0.0, 0.9, 1.0, 1.0)
+			return phase_color_from_theme()
+		Phase.IDLE:
+			return phase_color_from_theme(0.0, 1.0, 1.0, 0.6)
 		_:
-			return Color(0.0, 0.85, 1.0, 0.6)
+			return phase_color_from_theme(0.0, 1.0, 1.0, 0.6)
+
+
+static func theme_rgb() -> Color:
+	var base := AgentColors.theme_color
+	return Color(base.r, base.g, base.b, 1.0)
+
+
+## Hue/sat/value offsets relative to AgentColors.theme_color (HSV).
+static func phase_color_from_theme(
+	hue_offset: float = 0.0,
+	sat_mul: float = 1.0,
+	val_mul: float = 1.0,
+	alpha: float = 1.0,
+) -> Color:
+	var base := AgentColors.theme_color
+	var rgb := Color.from_hsv(
+		fmod(base.h + hue_offset, 1.0),
+		clampf(base.s * sat_mul, 0.0, 1.0),
+		clampf(base.v * val_mul, 0.0, 1.0),
+	)
+	return Color(rgb.r, rgb.g, rgb.b, alpha)
 
 
 static func keywords_for(phase: Phase, tool_name: String = "") -> Array[String]:
