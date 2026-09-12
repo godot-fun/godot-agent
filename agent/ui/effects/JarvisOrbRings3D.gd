@@ -4,7 +4,7 @@ extends Node3D
 ## Rotating holographic rings around the neural core.
 
 const RING_PATH_SEGMENTS := 160
-const RING_BAND_HALF_WIDTH := 0.012
+const RING_BAND_HALF_WIDTH := 0.0035
 
 var ring_nodes: Array[MeshInstance3D] = []
 var ring_materials: Array[StandardMaterial3D] = []
@@ -34,15 +34,18 @@ func set_tool_mode(enabled: bool) -> void:
 
 
 func apply_display_color(color: Color) -> void:
+	var theme_strength := 1.0 if AgentColors.is_dark() else 0.82
 	for i in ring_materials.size():
 		var mat := ring_materials[i]
-		mat.albedo_color = Color(color.r, color.g, color.b, 0.12 - i * 0.02)
-		mat.emission = Color(color.r * 0.88, color.g * 0.88, color.b * 0.88)
+		var fade := 1.0 - float(i) * 0.14
+		mat.albedo_color = Color(color.r, color.g, color.b, (0.26 - i * 0.05) * fade)
+		mat.emission = Color(color.r, color.g, color.b)
+		mat.emission_energy_multiplier = (0.62 - i * 0.1) * theme_strength
 	pass
 
 
 func build_rings() -> void:
-	var radii: PackedFloat32Array = PackedFloat32Array([1.22, 1.48, 1.72])
+	var radii := OrbVisualScale.ring_radii()
 	for i in radii.size():
 		var radius: float = radii[i]
 		var ring_mesh := build_circle_ribbon_mesh(radius, RING_BAND_HALF_WIDTH, RING_PATH_SEGMENTS)
@@ -50,10 +53,10 @@ func build_rings() -> void:
 		var mat := StandardMaterial3D.new()
 		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		mat.albedo_color = Color(0.0, 0.85, 1.0, 0.12 - i * 0.02)
+		mat.albedo_color = Color(1.0, 1.0, 1.0, 0.0)
 		mat.emission_enabled = true
-		mat.emission = Color(0.0, 0.75, 1.0)
-		mat.emission_energy_multiplier = 0.35 - i * 0.06
+		mat.emission = Color.WHITE
+		mat.emission_energy_multiplier = 0.0
 		mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 		ring_materials.append(mat)
 

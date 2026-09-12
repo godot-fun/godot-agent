@@ -7,9 +7,7 @@ const LAYER_INNER := 0
 const LAYER_OUTER := 1
 const INNER_LAYER_RATIO := 0.36
 const INNER_CORE_RADIUS := 0.34
-## Outer shell sits in a thin band well outside the inner core (see INNER_CORE_RADIUS).
-const OUTER_SHELL_RADIUS_CENTER := 1.22
-const OUTER_SHELL_RADIUS_SPREAD := 0.035
+## Outer shell band — center/spread live on OrbVisualScale (shared with HUD rings).
 
 const NEIGHBORS := 3
 const INNER_NEIGHBORS := 4
@@ -614,9 +612,9 @@ func generate_outer_shell_points(count: int) -> PackedVector3Array:
 		y *= 1.05
 		z *= 0.82
 		var shell_dir := Vector3(x, y, z).normalized()
-		var radial_jitter := (rng.randf() - 0.5) * 2.0 * OUTER_SHELL_RADIUS_SPREAD
+		var radial_jitter := (rng.randf() - 0.5) * 2.0 * OrbVisualScale.OUTER_SHELL_RADIUS_SPREAD
 		radial_jitter *= pow(rng.randf(), 0.55)
-		var radius := OUTER_SHELL_RADIUS_CENTER + radial_jitter
+		var radius := OrbVisualScale.OUTER_SHELL_RADIUS_CENTER + radial_jitter
 		var point := shell_dir * radius
 		point += shell_dir * rng.randf_range(-0.012, 0.012)
 		point.x += rng.randf_range(-0.01, 0.01)
