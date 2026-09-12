@@ -3,6 +3,11 @@ extends Control
 
 ## Event-driven Jarvis orb overlay — shows while the active session agent runs.
 
+const REVEAL_SCALE_MIN := 0.04
+const REVEAL_DURATION_S := 0.82
+const HIDE_DURATION_S := 0.68
+const ORB_ALPHA := 0.88
+
 var running_session_id: int = AgentSessionManager.INVALID_SESSION_ID
 var phase: OrbPhase.Phase = OrbPhase.Phase.IDLE
 var current_tool_name: String = ""
@@ -20,7 +25,7 @@ func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	build_scene()
 	connect_events()
-	hide_orb_immediate()
+	set_orb_visible(false, false)
 	pass
 
 
@@ -84,8 +89,6 @@ func connect_events() -> void:
 	AgentEvents.events.chat_entry_add.connect(on_chat_entry_add)
 	AgentEvents.events.theme_changed.connect(on_theme_changed)
 	AgentEvents.events.jarvis_orb_changed.connect(on_jarvis_orb_changed)
-	if not JarvisToggle.jarvis_orb_enabled:
-		hide_orb_immediate()
 	pass
 
 
@@ -94,12 +97,12 @@ func on_agent_start(session_id: int) -> void:
 	if jarvis_orb != null:
 		jarvis_orb.reset_growth()
 	if not JarvisToggle.jarvis_orb_enabled:
-		hide_orb_immediate()
+		set_orb_visible(false, false)
 		return
 	if not AgentSessionManager.is_active(session_id):
 		return
 	transition_to(OrbPhase.Phase.AWAKE)
-	show_orb()
+	set_orb_visible(true, true)
 	feed_latest_user_prompt(session_id)
 	pass
 
@@ -127,7 +130,7 @@ func on_agent_end(session_id: int, error_message: String) -> void:
 	var delay: float = 1.1 if end_phase == OrbPhase.Phase.ERROR else 0.75
 	await get_tree().create_timer(delay).timeout
 	if running_session_id == session_id:
-		hide_orb()
+		set_orb_visible(false, true)
 		running_session_id = AgentSessionManager.INVALID_SESSION_ID
 	pass
 
@@ -143,12 +146,10 @@ func on_session_stop(session_id: int) -> void:
 
 func on_session_selected(session_id: int) -> void:
 	if running_session_id == AgentSessionManager.INVALID_SESSION_ID:
-		hide_orb_immediate()
+		set_orb_visible(false, false)
 		return
-	if AgentSessionManager.is_active(running_session_id) and AgentSessionManager.is_running(running_session_id):
-		show_orb_immediate()
-	else:
-		hide_orb_immediate()
+	var running := AgentSessionManager.is_active(running_session_id) and AgentSessionManager.is_running(running_session_id)
+	set_orb_visible(running, false)
 	pass
 
 
@@ -199,7 +200,7 @@ func on_tool_execution_end(session_id: int, _tool_call_id: String, tool_name: St
 	if not _should_handle(session_id):
 		return
 	if StringUtils.is_not_empty(result):
-		var snippet := result if result.length() <= 180 else result.substr(0, 180)
+		var snippet := CharStreamUtils.truncate_at_punctuation(result, 180)
 		jarvis_orb.add_step_text(snippet)
 	if phase == OrbPhase.Phase.TOOL_EXEC:
 		transition_to(OrbPhase.Phase.AWAKE)
@@ -215,21 +216,21 @@ func on_chat_entry_add(session_id: int, entry: ChatEntry) -> void:
 
 
 func on_theme_changed(_is_dark: bool) -> void:
-	if vignette != null:
-		vignette.set_strength(0.45 if AgentColors.is_dark() else 0.22)
+	if visible and vignette != null:
+		vignette.set_strength(orb_vignette_target())
 	pass
 
 
 func on_jarvis_orb_changed(enabled: bool) -> void:
 	if not enabled:
-		hide_orb_immediate()
+		set_orb_visible(false, false)
 		return
 	if running_session_id == AgentSessionManager.INVALID_SESSION_ID:
 		return
 	if not AgentSessionManager.is_active(running_session_id):
 		return
 	if AgentSessionManager.is_running(running_session_id):
-		show_orb_immediate()
+		set_orb_visible(true, true)
 	pass
 
 
@@ -240,50 +241,70 @@ func transition_to(new_phase: OrbPhase.Phase, tool_name: String = "") -> void:
 	pass
 
 
-func show_orb() -> void:
-	if not JarvisToggle.jarvis_orb_enabled:
-		hide_orb_immediate()
-		return
-	show_orb_immediate()
-	modulate.a = 0.0
+func orb_vignette_target() -> float:
+	return 0.45 if AgentColors.is_dark() else 0.22
+
+
+func stop_orb_tween() -> void:
 	if fade_tween != null and fade_tween.is_valid():
 		fade_tween.kill()
-	fade_tween = create_tween()
-	fade_tween.set_parallel(true)
-	fade_tween.tween_property(self, "modulate:a", 0.88, 0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	if vignette != null:
-		var target: float = 0.45 if AgentColors.is_dark() else 0.22
-		fade_tween.tween_method(vignette.set_strength, 0.0, target, 0.45)
 	pass
 
 
-func show_orb_immediate() -> void:
-	if not JarvisToggle.jarvis_orb_enabled:
-		hide_orb_immediate()
+func set_orb_visible(show: bool, animated: bool) -> void:
+	if show and not JarvisToggle.jarvis_orb_enabled:
+		show = false
+	if not show:
+		if not visible:
+			return
+		stop_orb_tween()
+		if not animated:
+			finalize_orb_hidden()
+			return
+		ensure_center_pivot()
+		fade_tween = build_orb_tween(false)
+		fade_tween.chain().tween_callback(finalize_orb_hidden)
 		return
+
+	stop_orb_tween()
 	visible = true
-	modulate.a = 0.88
-	scale = Vector2.ONE
+	ensure_center_pivot()
+	if not animated:
+		scale = Vector2.ONE
+		modulate.a = ORB_ALPHA
+		if vignette != null:
+			vignette.set_strength(orb_vignette_target())
+		return
+
+	scale = Vector2(REVEAL_SCALE_MIN, REVEAL_SCALE_MIN)
+	modulate.a = 0.0
 	if vignette != null:
-		vignette.set_strength(0.45 if AgentColors.is_dark() else 0.22)
+		vignette.set_strength(0.0)
+	fade_tween = build_orb_tween(true)
 	pass
 
 
-func hide_orb() -> void:
-	if fade_tween != null and fade_tween.is_valid():
-		fade_tween.kill()
-	fade_tween = create_tween()
-	fade_tween.set_parallel(true)
-	fade_tween.tween_property(self, "modulate:a", 0.0, 0.55)
+func build_orb_tween(revealing: bool) -> Tween:
+	var duration := REVEAL_DURATION_S if revealing else HIDE_DURATION_S
+	var ease_type := Tween.EASE_OUT if revealing else Tween.EASE_IN
+	var end_scale := Vector2.ONE if revealing else Vector2(REVEAL_SCALE_MIN, REVEAL_SCALE_MIN)
+	var end_alpha := ORB_ALPHA if revealing else 0.0
+	var alpha_duration := duration * 0.92 if revealing else duration
+	var vignette_start := 0.0 if revealing else (vignette.color.a if vignette != null else 0.0)
+	var vignette_end := orb_vignette_target() if revealing else 0.0
+
+	var tween := create_tween().set_parallel(true)
+	tween.tween_property(self, "scale", end_scale, duration).set_trans(Tween.TRANS_CUBIC).set_ease(ease_type)
+	tween.tween_property(self, "modulate:a", end_alpha, alpha_duration).set_trans(Tween.TRANS_CUBIC).set_ease(ease_type)
 	if vignette != null:
-		fade_tween.tween_method(vignette.set_strength, vignette.color.a, 0.0, 0.55)
-	fade_tween.chain().tween_callback(hide_orb_immediate)
-	pass
+		tween.tween_method(vignette.set_strength, vignette_start, vignette_end, duration).set_trans(Tween.TRANS_CUBIC).set_ease(ease_type)
+	return tween
 
 
-func hide_orb_immediate() -> void:
+func finalize_orb_hidden() -> void:
 	visible = false
 	modulate.a = 0.0
+	scale = Vector2.ONE
 	phase = OrbPhase.Phase.IDLE
 	if vignette != null:
 		vignette.set_strength(0.0)
@@ -291,6 +312,11 @@ func hide_orb_immediate() -> void:
 		jarvis_orb.clear_stream_queue()
 		jarvis_orb.reset_growth()
 		jarvis_orb.set_phase(OrbPhase.Phase.IDLE)
+	pass
+
+
+func ensure_center_pivot() -> void:
+	pivot_offset = size * 0.5
 	pass
 
 

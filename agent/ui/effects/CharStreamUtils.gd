@@ -74,17 +74,20 @@ static func clean_step_text(text: String) -> String:
 	return cleaned.strip_edges()
 
 
+static func is_clause_delimiter(ch: String) -> bool:
+	if ch == "\n" or ch == "。" or ch == "！" or ch == "？" or ch == "!" or ch == "?":
+		return true
+	if ch == ";" or ch == "；" or ch == "，" or ch == "," or ch == ".":
+		return true
+	return false
+
+
 static func split_clauses(text: String) -> Array[String]:
 	var parts: Array[String] = []
 	var current := ""
 	for i in text.length():
 		var ch := text.substr(i, 1)
-		if ch == "\n" or ch == "。" or ch == "！" or ch == "？" or ch == "!" or ch == "?" or ch == ";" or ch == "；":
-			if not current.strip_edges().is_empty():
-				parts.append(current.strip_edges())
-			current = ""
-			continue
-		if ch == "，" or ch == "," or ch == ".":
+		if is_clause_delimiter(ch):
 			if not current.strip_edges().is_empty():
 				parts.append(current.strip_edges())
 			current = ""
@@ -93,6 +96,26 @@ static func split_clauses(text: String) -> Array[String]:
 	if not current.strip_edges().is_empty():
 		parts.append(current.strip_edges())
 	return parts
+
+
+## Shorten long display text at the last punctuation before max_len (not a hard char chop).
+static func truncate_at_punctuation(text: String, max_len: int) -> String:
+	var phrase := text.strip_edges()
+	if phrase.length() <= max_len:
+		return phrase
+	var cut := find_last_delimiter_index(phrase, max_len)
+	if cut >= MIN_PHRASE_LEN:
+		return phrase.substr(0, cut).strip_edges()
+	for clause in split_clauses(phrase):
+		var part := clause.strip_edges()
+		if part.is_empty():
+			continue
+		if part.length() <= max_len:
+			return part
+		var inner_cut := find_last_delimiter_index(part, max_len)
+		if inner_cut >= MIN_PHRASE_LEN:
+			return part.substr(0, inner_cut).strip_edges()
+	return phrase.substr(0, max_len).strip_edges() + "…"
 
 
 static func try_add_phrase(result: Array[String], seen: Dictionary, raw: String, max_count: int) -> void:
@@ -107,10 +130,16 @@ static func try_add_phrase(result: Array[String], seen: Dictionary, raw: String,
 
 
 static func format_phrase(raw: String) -> String:
-	var phrase := raw.strip_edges()
-	if phrase.length() > MAX_PHRASE_LEN:
-		phrase = phrase.substr(0, MAX_PHRASE_LEN - 1) + "…"
-	return phrase
+	return truncate_at_punctuation(raw.strip_edges(), MAX_PHRASE_LEN)
+
+
+static func find_last_delimiter_index(text: String, before: int) -> int:
+	var limit := clampi(before, 0, text.length())
+	var last := -1
+	for i in limit:
+		if is_clause_delimiter(text.substr(i, 1)):
+			last = i
+	return last
 
 
 static func is_useful_phrase(phrase: String) -> bool:
