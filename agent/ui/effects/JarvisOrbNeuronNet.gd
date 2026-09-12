@@ -6,8 +6,9 @@ extends Node3D
 const NEIGHBORS := 3
 const MAX_EDGE_DIST := 0.55
 const FILAMENT_SAMPLE_STRIDE := 2
-## Slim quad width for synapse segments (PRIMITIVE_LINES is unreliable in 3D).
-const FILAMENT_HALF_WIDTH := 0.0020
+## Screen-space synapse width (expanded in jarvis_filament.gdshader vertex).
+const FILAMENT_LINE_WIDTH_PX := 0.85
+const FILAMENT_LINE_AA_PX := 0.3
 ## White synapse lines (intensity via shader; not phase-tinted).
 const SYNAPSE_LINE_COLOR := Color(1.0, 1.0, 1.0, 1.0)
 
@@ -48,6 +49,9 @@ func _ready() -> void:
 	sphere_mesh.radial_segments = 6
 	sphere_mesh.rings = 4
 	rebuild_neurons(OrbGrowth.NEURON_MIN)
+	var vp := get_viewport()
+	if vp != null and not vp.size_changed.is_connected(sync_filament_viewport_uniform):
+		vp.size_changed.connect(sync_filament_viewport_uniform)
 	pass
 
 
@@ -162,6 +166,22 @@ func sync_filament_theme() -> void:
 		"line_strength",
 		0.52 if AgentColors.is_dark() else 0.28
 	)
+	filament_shader.set_shader_parameter("line_width_px", FILAMENT_LINE_WIDTH_PX)
+	filament_shader.set_shader_parameter("line_aa_px", FILAMENT_LINE_AA_PX)
+	sync_filament_viewport_uniform()
+	pass
+
+
+func sync_filament_viewport_uniform() -> void:
+	if filament_shader == null:
+		return
+	var vp := get_viewport()
+	if vp == null:
+		return
+	var size := Vector2(vp.size)
+	if size.x < 1.0 or size.y < 1.0:
+		size = vp.get_visible_rect().size
+	filament_shader.set_shader_parameter("viewport_size", size)
 	pass
 
 
@@ -326,14 +346,19 @@ func refresh_multimesh_transforms() -> void:
 func build_filament_arrays() -> Array:
 	if synapse_pairs.is_empty():
 		return []
+	sync_filament_viewport_uniform()
 	var verts := PackedVector3Array()
+	var colors := PackedColorArray()
 	var uvs := PackedVector2Array()
+	var uvs2 := PackedVector2Array()
 	var normals := PackedVector3Array()
 	var indices := PackedInt32Array()
 	for pair in synapse_pairs:
 		append_filament_quad(
 			verts,
+			colors,
 			uvs,
+			uvs2,
 			normals,
 			indices,
 			neuron_positions[pair.x],
@@ -344,7 +369,9 @@ func build_filament_arrays() -> Array:
 	var arrays: Array = []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_COLOR] = colors
 	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	arrays[Mesh.ARRAY_TEX_UV2] = uvs2
 	arrays[Mesh.ARRAY_NORMAL] = normals
 	arrays[Mesh.ARRAY_INDEX] = indices
 	return arrays
@@ -363,27 +390,34 @@ func refresh_filament_vertices() -> void:
 
 func append_filament_quad(
 	verts: PackedVector3Array,
+	colors: PackedColorArray,
 	uvs: PackedVector2Array,
+	uvs2: PackedVector2Array,
 	normals: PackedVector3Array,
 	indices: PackedInt32Array,
 	a: Vector3,
 	b: Vector3
 ) -> void:
-	var ab := b - a
-	var length := ab.length()
-	if length < 0.0001:
+	if a.distance_squared_to(b) < 0.00000001:
 		return
-	var dir := ab / length
-	var ref := Vector3.UP if absf(dir.dot(Vector3.UP)) < 0.92 else Vector3.FORWARD
-	var side := dir.cross(ref).normalized()
-	var half := side * FILAMENT_HALF_WIDTH
+	var ab := b - a
+	var ba := -ab
 	var base: int = verts.size()
-	verts.append(a - half)
-	verts.append(a + half)
-	verts.append(b + half)
-	verts.append(b - half)
+	verts.append(a)
+	verts.append(a)
+	verts.append(b)
+	verts.append(b)
+	# COLOR.r + UV2.xy = offset to the other endpoint (avoid negative vertex alpha).
+	colors.append(Color(ab.z, 0.0, 0.0, 1.0))
+	colors.append(Color(ab.z, 0.0, 0.0, 1.0))
+	colors.append(Color(ba.z, 0.0, 0.0, 1.0))
+	colors.append(Color(ba.z, 0.0, 0.0, 1.0))
+	uvs2.append(Vector2(ab.x, ab.y))
+	uvs2.append(Vector2(ab.x, ab.y))
+	uvs2.append(Vector2(ba.x, ba.y))
+	uvs2.append(Vector2(ba.x, ba.y))
 	for _i in 4:
-		normals.append(side)
+		normals.append(Vector3.UP)
 	uvs.append(Vector2(0.0, 0.0))
 	uvs.append(Vector2(0.0, 1.0))
 	uvs.append(Vector2(1.0, 1.0))

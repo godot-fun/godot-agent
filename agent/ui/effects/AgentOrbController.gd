@@ -43,7 +43,9 @@ func build_scene() -> void:
 	sub_viewport.transparent_bg = true
 	sub_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	sub_viewport.own_world_3d = true
+	sub_viewport.msaa_3d = Viewport.MSAA_4X
 	viewport_container.add_child(sub_viewport)
+	viewport_container.stretch_shrink = 1
 
 	var env := WorldEnvironment.new()
 	var environment := Environment.new()
