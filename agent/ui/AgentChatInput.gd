@@ -14,6 +14,7 @@ var input_wrap: PanelContainer
 var input_inner: Control
 var input_field: TextEdit
 var send_button: Button
+var border_beam: InputBorderBeamLayer
 
 var expanded: bool = false
 var force_expanded: bool = false
@@ -59,7 +60,9 @@ func setup(
 	input_bar.get_window().files_dropped.connect(on_files_dropped)
 	input_bar.get_window().window_input.connect(on_global_input)
 	AgentEvents.events.theme_changed.connect(on_theme_changed)
+	AgentEvents.events.theme_color_changed.connect(on_theme_color_changed)
 	AgentEvents.events.session_selected.connect(on_session_selected)
+	setup_border_beam()
 	AgentEvents.events.agent_start.connect(on_agent_start)
 	AgentEvents.events.session_stop.connect(on_session_stop)
 	apply_theme()
@@ -69,6 +72,47 @@ func setup(
 func on_theme_changed(_is_dark: bool) -> void:
 	apply_theme()
 	refresh_from_active_session()
+	pass
+
+
+func on_theme_color_changed(_color: Color) -> void:
+	style_wrap()
+	refresh_border_beam()
+	pass
+
+
+func setup_border_beam() -> void:
+	border_beam = InputBorderBeamLayer.new()
+	border_beam.name = "BorderBeam"
+	border_beam.z_index = 2
+	input_bar.add_child(border_beam)
+	for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
+		border_beam.set_anchor(side, 0.0)
+	layout_border_beam()
+	refresh_border_beam()
+	pass
+
+
+func layout_border_beam() -> void:
+	if border_beam == null:
+		return
+	border_beam.offset_left = input_wrap.offset_left
+	border_beam.offset_top = input_wrap.offset_top
+	border_beam.offset_right = input_wrap.offset_right
+	border_beam.offset_bottom = input_wrap.offset_bottom
+	pass
+
+
+func refresh_border_beam() -> void:
+	if border_beam == null:
+		return
+	border_beam.set_shape(expanded)
+	var strength := 0.45
+	if input_field.has_focus():
+		strength = 1.0
+	elif expanded:
+		strength = 0.72
+	border_beam.set_highlight_strength(strength)
 	pass
 
 
@@ -257,6 +301,7 @@ func on_field_focus_entered() -> void:
 		set_expanded(true, true)
 	else:
 		layout_bar()
+	refresh_border_beam()
 	restore_caret()
 	pass
 
@@ -264,6 +309,7 @@ func on_field_focus_entered() -> void:
 func on_field_focus_exited() -> void:
 	if drop_focus_guard:
 		return
+	refresh_border_beam()
 	try_collapse.call_deferred()
 	pass
 
@@ -355,6 +401,8 @@ func layout_bar() -> void:
 	input_wrap.tooltip_text = "" if expanded else "Click to ask Code Agent…"
 	layout_send_button(expanded)
 	style_wrap()
+	layout_border_beam()
+	refresh_border_beam()
 	pass
 
 
@@ -413,6 +461,12 @@ func apply_input_tween_step(value: float) -> void:
 	input_wrap.offset_top = tween_bar_size.y - BOTTOM_MARGIN - height
 	input_wrap.offset_bottom = tween_bar_size.y - BOTTOM_MARGIN
 	input_inner.custom_minimum_size.y = maxf(0.0, height - 8.0)
+	if border_beam != null:
+		border_beam.offset_left = lerpf(tween_start_left, tween_target_left, value)
+		border_beam.offset_right = tween_bar_size.x - SIDE_MARGIN
+		border_beam.offset_top = tween_bar_size.y - BOTTOM_MARGIN - height
+		border_beam.offset_bottom = tween_bar_size.y - BOTTOM_MARGIN
+		border_beam.set_shape(tween_expand_target)
 	pass
 
 
@@ -435,7 +489,7 @@ func style_wrap() -> void:
 func build_wrap_style(is_expanded: bool) -> StyleBoxFlat:
 	var wrap_style := StyleBoxFlat.new()
 	wrap_style.bg_color = AgentColors.chat_input
-	wrap_style.border_color = AgentColors.chat_input_border
+	wrap_style.border_color = AgentColors.chat_input_border.darkened(0.12)
 	wrap_style.set_border_width_all(1)
 	var radius := 16 if is_expanded else int(COLLAPSED_SIZE / 2)
 	wrap_style.set_corner_radius_all(radius)
@@ -558,3 +612,186 @@ func make_stop_icon(size: int, color: Color) -> ImageTexture:
 		for x in range(left, left + square_size):
 			img.set_pixel(x, y, color)
 	return ImageTexture.create_from_image(img)
+
+
+# ---------------------------------------------------------------------------
+# Border beam overlay (theme-color flowing stroke on input outer edge)
+# ---------------------------------------------------------------------------
+
+class InputBorderBeamLayer extends Control:
+	const BEAM_SPEED := 0.42
+	const BEAM_SPAN := 0.20
+	const BORDER_WIDTH := 2.0
+	const GLOW_WIDTH := 5.0
+	const BASE_BORDER_ALPHA := 0.22
+	const BEAM_CORE_ALPHA := 0.95
+	const BEAM_TAIL_SAMPLES := 48
+
+	var expanded_shape: bool = false
+	var highlight_strength: float = 0.55
+	var phase: float = 0.0
+
+
+	func _ready() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		set_anchors_preset(PRESET_FULL_RECT)
+		AgentEvents.events.theme_color_changed.connect(on_theme_color_changed)
+		AgentEvents.events.theme_changed.connect(on_theme_color_changed)
+		pass
+
+
+	func _process(delta: float) -> void:
+		if not is_visible_in_tree():
+			return
+		phase = fmod(phase + delta * BEAM_SPEED, 1.0)
+		queue_redraw()
+		pass
+
+
+	func on_theme_color_changed(_unused = null) -> void:
+		queue_redraw()
+		pass
+
+
+	func set_shape(is_expanded: bool) -> void:
+		expanded_shape = is_expanded
+		queue_redraw()
+		pass
+
+
+	func set_highlight_strength(strength: float) -> void:
+		highlight_strength = clampf(strength, 0.0, 1.0)
+		queue_redraw()
+		pass
+
+
+	func corner_radius_for_size() -> float:
+		if expanded_shape:
+			return 16.0
+		return size.y * 0.5
+
+
+	func perimeter(rect_size: Vector2, radius: float) -> float:
+		var r := minf(radius, minf(rect_size.x, rect_size.y) * 0.5)
+		return 2.0 * (rect_size.x + rect_size.y - 4.0 * r) + TAU * r
+
+
+	func point_on_rounded_rect(rect_size: Vector2, radius: float, dist: float) -> Vector2:
+		var w := rect_size.x
+		var h := rect_size.y
+		var r := minf(radius, minf(w, h) * 0.5)
+		var top := w - 2.0 * r
+		var side := h - 2.0 * r
+		var arc := PI * 0.5 * r
+		var seg := [top, arc, side, arc, top, arc, side, arc]
+		var total := 0.0
+		for length in seg:
+			total += length
+		dist = fposmod(dist, total)
+		var x := r
+		var y := 0.0
+		var heading := 0.0
+		for length in seg:
+			if dist <= length:
+				var t: float = dist / length if length > 0.0 else 0.0
+				match int(heading):
+					0:
+						x = r + t * top
+						y = 0.0
+					1:
+						var angle := -PI * 0.5 + t * PI * 0.5
+						x = w - r + cos(angle) * r
+						y = r + sin(angle) * r
+					2:
+						x = w
+						y = r + t * side
+					3:
+						var angle2 := t * PI * 0.5
+						x = w - r + cos(angle2) * r
+						y = h - r + sin(angle2) * r
+					4:
+						x = w - r - t * top
+						y = h
+					5:
+						var angle3 := PI * 0.5 + t * PI * 0.5
+						x = r + cos(angle3) * r
+						y = h - r + sin(angle3) * r
+					6:
+						x = 0.0
+						y = h - r - t * side
+					_:
+						var angle4 := PI + t * PI * 0.5
+						x = r + cos(angle4) * r
+						y = r + sin(angle4) * r
+				return Vector2(x, y)
+			dist -= length
+			heading += 1.0
+		return Vector2(r, 0.0)
+
+
+	func _draw() -> void:
+		if size.x < 4.0 or size.y < 4.0:
+			return
+		var rect_size := size
+		var inset := BORDER_WIDTH * 0.5
+		var inner := Rect2(inset, inset, rect_size.x - inset * 2.0, rect_size.y - inset * 2.0)
+		if inner.size.x <= 2.0 or inner.size.y <= 2.0:
+			return
+		var radius := corner_radius_for_size()
+		var accent := AgentColors.theme_color
+		var strength := highlight_strength
+
+		var base_col := accent
+		base_col.a = BASE_BORDER_ALPHA * (0.65 + strength * 0.35)
+		draw_rounded_rect_stroke(inner, radius, base_col, 1.0)
+
+		var perim := perimeter(inner.size, radius)
+		var head_dist := phase * perim
+		var span := perim * BEAM_SPAN
+		var points: PackedVector2Array = []
+		var alphas: PackedFloat32Array = []
+		for i in BEAM_TAIL_SAMPLES + 1:
+			var t := float(i) / float(BEAM_TAIL_SAMPLES)
+			var along := head_dist - span * (1.0 - t)
+			var local := point_on_rounded_rect(inner.size, radius, along)
+			points.append(inner.position + local)
+			alphas.append(pow(t, 1.6))
+
+		if points.size() >= 2:
+			for i in range(points.size() - 1):
+				var a0 := alphas[i] * strength
+				var a1 := alphas[i + 1] * strength
+				if a0 < 0.02 and a1 < 0.02:
+					continue
+				var glow := accent
+				glow.a = maxf(a0, a1) * 0.35
+				draw_line(points[i], points[i + 1], glow, GLOW_WIDTH, true)
+				var core := accent.lightened(0.08)
+				core.a = maxf(a0, a1) * BEAM_CORE_ALPHA
+				draw_line(points[i], points[i + 1], core, BORDER_WIDTH, true)
+
+		var head := inner.position + point_on_rounded_rect(inner.size, radius, head_dist)
+		var head_glow := accent
+		head_glow.a = 0.55 * strength
+		draw_circle(head, GLOW_WIDTH * 0.55, head_glow)
+		var head_core := accent.lightened(0.15)
+		head_core.a = 0.9 * strength
+		draw_circle(head, BORDER_WIDTH * 0.9, head_core)
+		pass
+
+
+	func draw_rounded_rect_stroke(rect: Rect2, radius: float, color: Color, width: float) -> void:
+		var r := minf(radius, minf(rect.size.x, rect.size.y) * 0.5)
+		var tl := rect.position
+		var tr := rect.position + Vector2(rect.size.x, 0.0)
+		var br := rect.position + rect.size
+		var bl := rect.position + Vector2(0.0, rect.size.y)
+		draw_line(tl + Vector2(r, 0.0), tr - Vector2(r, 0.0), color, width, true)
+		draw_line(tr + Vector2(0.0, r), br - Vector2(0.0, r), color, width, true)
+		draw_line(br - Vector2(r, 0.0), bl + Vector2(r, 0.0), color, width, true)
+		draw_line(bl - Vector2(0.0, r), tl + Vector2(0.0, r), color, width, true)
+		draw_arc(tl + Vector2(r, r), r, PI, PI * 1.5, 24, color, width, true)
+		draw_arc(tr + Vector2(-r, r), r, PI * 1.5, TAU, 24, color, width, true)
+		draw_arc(br + Vector2(-r, -r), r, 0.0, PI * 0.5, 24, color, width, true)
+		draw_arc(bl + Vector2(r, -r), r, PI * 0.5, PI, 24, color, width, true)
+		pass
