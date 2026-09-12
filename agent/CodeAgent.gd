@@ -12,6 +12,7 @@ extends Control
 @onready var chat_scroll: ScrollContainer = $Root/Body/ChatArea/ChatScroll
 @onready var chat_host: MarginContainer = $Root/Body/ChatArea/ChatScroll/ChatMargin
 @onready var token_usage_wrap: PanelContainer = $Root/Toolbar/ToolbarRow/TokenUsageWrap
+@onready var jarvis_toggle_button: Button = $Root/Toolbar/ToolbarRow/JarvisToggleWrap/JarvisToggleButton
 @onready var skill_toggle_button: Button = $Root/Toolbar/ToolbarRow/SkillToggleWrap/SkillToggleButton
 @onready var markdown_toggle_button: Button = $Root/Toolbar/ToolbarRow/MarkdownToggleWrap/MarkdownToggleButton
 @onready var input_bar: Control = $Root/Body/ChatArea/InputBar
@@ -29,6 +30,7 @@ var chat_area: ChatArea = ChatArea.new()
 var chat_input: AgentChatInput = AgentChatInput.new()
 var theme_toggle: ThemeToggle = ThemeToggle.new()
 var log_panel: AgentLogPanel = AgentLogPanel.new()
+var jarvis_toggle: JarvisToggle = JarvisToggle.new()
 var skill_bubble: SkillBubble = SkillBubble.new()
 var token_usage_display: TokenUsageDisplay = TokenUsageDisplay.new()
 var markdown_toggle: MarkdownToggle = MarkdownToggle.new()
@@ -42,6 +44,7 @@ func _ready() -> void:
 	session_sidebar.setup(session_list, new_session_button, sidebar_title, sidebar_panel)
 	chat_area.setup(chat_area_panel, self)
 	token_usage_display.setup(token_usage_wrap)
+	jarvis_toggle.setup(jarvis_toggle_button)
 	skill_bubble.setup_toggle(skill_toggle_button)
 	markdown_toggle.setup(markdown_toggle_button)
 	chat_view.setup(chat_scroll, chat_host)

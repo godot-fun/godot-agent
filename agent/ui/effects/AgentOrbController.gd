@@ -15,6 +15,7 @@ var fade_tween: Tween
 
 
 func _ready() -> void:
+	JarvisToggle.refresh_from_settings()
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	build_scene()
@@ -82,6 +83,9 @@ func connect_events() -> void:
 	AgentEvents.events.tool_execution_end.connect(on_tool_execution_end)
 	AgentEvents.events.chat_entry_add.connect(on_chat_entry_add)
 	AgentEvents.events.theme_changed.connect(on_theme_changed)
+	AgentEvents.events.jarvis_orb_changed.connect(on_jarvis_orb_changed)
+	if not JarvisToggle.jarvis_orb_enabled:
+		hide_orb_immediate()
 	pass
 
 
@@ -89,6 +93,9 @@ func on_agent_start(session_id: int) -> void:
 	running_session_id = session_id
 	if jarvis_orb != null:
 		jarvis_orb.reset_growth()
+	if not JarvisToggle.jarvis_orb_enabled:
+		hide_orb_immediate()
+		return
 	if not AgentSessionManager.is_active(session_id):
 		return
 	transition_to(OrbPhase.Phase.AWAKE)
@@ -213,6 +220,19 @@ func on_theme_changed(_is_dark: bool) -> void:
 	pass
 
 
+func on_jarvis_orb_changed(enabled: bool) -> void:
+	if not enabled:
+		hide_orb_immediate()
+		return
+	if running_session_id == AgentSessionManager.INVALID_SESSION_ID:
+		return
+	if not AgentSessionManager.is_active(running_session_id):
+		return
+	if AgentSessionManager.is_running(running_session_id):
+		show_orb_immediate()
+	pass
+
+
 func transition_to(new_phase: OrbPhase.Phase, tool_name: String = "") -> void:
 	phase = new_phase
 	if jarvis_orb != null:
@@ -221,6 +241,9 @@ func transition_to(new_phase: OrbPhase.Phase, tool_name: String = "") -> void:
 
 
 func show_orb() -> void:
+	if not JarvisToggle.jarvis_orb_enabled:
+		hide_orb_immediate()
+		return
 	show_orb_immediate()
 	modulate.a = 0.0
 	if fade_tween != null and fade_tween.is_valid():
@@ -235,6 +258,9 @@ func show_orb() -> void:
 
 
 func show_orb_immediate() -> void:
+	if not JarvisToggle.jarvis_orb_enabled:
+		hide_orb_immediate()
+		return
 	visible = true
 	modulate.a = 0.88
 	scale = Vector2.ONE
@@ -269,6 +295,8 @@ func hide_orb_immediate() -> void:
 
 
 func _should_handle(session_id: int) -> bool:
+	if not JarvisToggle.jarvis_orb_enabled:
+		return false
 	if session_id != running_session_id:
 		return false
 	if not AgentSessionManager.is_active(session_id):

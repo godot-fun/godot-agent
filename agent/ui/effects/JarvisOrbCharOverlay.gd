@@ -117,6 +117,11 @@ func clear_queue() -> void:
 	pass
 
 
+func apply_orb_font(label: Label3D) -> void:
+	label.font = Fonts.light()
+	pass
+
+
 func refresh_shared_curves() -> void:
 	shared_curves.clear()
 	if neuron_net == null:
@@ -137,6 +142,7 @@ func refresh_shared_curves() -> void:
 func build_label_pool() -> void:
 	for _i in POOL_SIZE:
 		var label := Label3D.new()
+		apply_orb_font(label)
 		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		label.font_size = 20
 		label.outline_size = 5
@@ -152,6 +158,7 @@ func build_label_pool() -> void:
 func build_keyword_pool() -> void:
 	for _i in KEYWORD_POOL:
 		var label := Label3D.new()
+		apply_orb_font(label)
 		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		label.font_size = 36
 		label.outline_size = 8
