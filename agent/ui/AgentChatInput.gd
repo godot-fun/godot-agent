@@ -546,6 +546,7 @@ func style_field() -> void:
 	input_field.add_theme_stylebox_override("normal", input_style)
 	input_field.add_theme_stylebox_override("focus", input_style.duplicate())
 	input_field.add_theme_stylebox_override("read_only", input_style.duplicate())
+	input_field.add_theme_font_override("font", Fonts.regular())
 	input_field.add_theme_color_override("font_color", AgentColors.chat_text)
 	input_field.add_theme_color_override("font_placeholder_color", AgentColors.chat_text_muted)
 	input_field.add_theme_color_override("font_readonly_color", AgentColors.chat_text_muted)

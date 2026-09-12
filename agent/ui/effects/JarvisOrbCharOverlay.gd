@@ -118,7 +118,7 @@ func clear_queue() -> void:
 
 
 func apply_orb_font(label: Label3D) -> void:
-	label.font = Fonts.light()
+	label.font = Fonts.regular()
 	pass
 
 
