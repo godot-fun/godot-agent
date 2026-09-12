@@ -9,7 +9,6 @@ var char_overlay: JarvisOrbCharOverlay
 
 var phase: OrbPhase.Phase = OrbPhase.Phase.IDLE
 var spin_speed: float = 0.7
-var wobble: float = 0.0
 var stream_char_total: int = 0
 var color_controller: OrbColorController = OrbColorController.new()
 
@@ -20,11 +19,11 @@ var growth_flush_timer: float = 0.0
 
 func _ready() -> void:
 	scale = Vector3.ONE * OrbVisualScale.WORLD_SCALE
-	neuron_net = JarvisOrbNeuronNet.new()
-	add_child(neuron_net)
-
 	rings = JarvisOrbRings3D.new()
 	add_child(rings)
+
+	neuron_net = JarvisOrbNeuronNet.new()
+	add_child(neuron_net)
 
 	char_overlay = JarvisOrbCharOverlay.new()
 	char_overlay.setup(neuron_net)
@@ -35,12 +34,8 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	rotate_y(deg_to_rad(spin_speed) * delta)
-	if phase == OrbPhase.Phase.REASONING:
-		wobble = lerpf(wobble, 0.12, delta * 2.0)
-	else:
-		wobble = lerpf(wobble, 0.0, delta * 3.0)
-	rotation.x = sin(Time.get_ticks_msec() * 0.0012) * wobble
+	if neuron_net != null:
+		neuron_net.wander_speed_scale = spin_speed
 
 	color_controller.update(delta)
 	apply_display_color()

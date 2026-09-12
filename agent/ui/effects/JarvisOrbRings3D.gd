@@ -3,6 +3,9 @@ extends Node3D
 
 ## Rotating holographic rings around the neural core.
 
+const RING_PATH_SEGMENTS := 160
+const RING_BAND_HALF_WIDTH := 0.012
+
 var ring_nodes: Array[MeshInstance3D] = []
 var ring_materials: Array[StandardMaterial3D] = []
 var spin_speeds: PackedFloat32Array = PackedFloat32Array([0.35, -0.55, 0.22])
@@ -42,11 +45,7 @@ func build_rings() -> void:
 	var radii: PackedFloat32Array = PackedFloat32Array([1.22, 1.48, 1.72])
 	for i in radii.size():
 		var radius: float = radii[i]
-		var torus := TorusMesh.new()
-		torus.inner_radius = radius - 0.012
-		torus.outer_radius = radius
-		torus.rings = 24
-		torus.ring_segments = 48
+		var ring_mesh := build_circle_ribbon_mesh(radius, RING_BAND_HALF_WIDTH, RING_PATH_SEGMENTS)
 
 		var mat := StandardMaterial3D.new()
 		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -59,9 +58,40 @@ func build_rings() -> void:
 		ring_materials.append(mat)
 
 		var ring := MeshInstance3D.new()
-		ring.mesh = torus
+		ring.mesh = ring_mesh
 		ring.material_override = mat
+		ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		ring.rotation_degrees = Vector3(72.0 + i * 14.0, 0.0, 18.0 + i * 8.0)
 		add_child(ring)
 		ring_nodes.append(ring)
 	pass
+
+
+func build_circle_ribbon_mesh(radius: float, band_half: float, segments: int) -> ArrayMesh:
+	var verts := PackedVector3Array()
+	var normals := PackedVector3Array()
+	var indices := PackedInt32Array()
+	for i in segments:
+		var a0 := TAU * float(i) / float(segments)
+		var a1 := TAU * float(i + 1) / float(segments)
+		var radial0 := Vector3(cos(a0), 0.0, sin(a0))
+		var radial1 := Vector3(cos(a1), 0.0, sin(a1))
+		var mid0 := radial0 * radius
+		var mid1 := radial1 * radius
+		var base: int = verts.size()
+		verts.append(mid0 - radial0 * band_half)
+		verts.append(mid0 + radial0 * band_half)
+		verts.append(mid1 + radial1 * band_half)
+		verts.append(mid1 - radial1 * band_half)
+		for _j in 4:
+			normals.append(Vector3.UP)
+		indices.append_array([base, base + 1, base + 2, base, base + 2, base + 3])
+
+	var arrays: Array = []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
