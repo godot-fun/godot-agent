@@ -152,6 +152,10 @@ func append_row(session_id: int, title: String) -> void:
 	row_panel.mouse_default_cursor_shape = Control.CURSOR_MOVE
 	bind_row_hover(row_panel, session_id)
 
+	var fx := SessionRowSciFiFx.new()
+	fx.name = "SciFiFx"
+	row_panel.add_child(fx)
+
 	var row := HBoxContainer.new()
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_theme_constant_override("separation", 4)
@@ -185,6 +189,7 @@ func append_row(session_id: int, title: String) -> void:
 	row.add_child(delete_button)
 	row_panel.set_meta("select_button", select_button)
 	row_panel.set_meta("delete_button", delete_button)
+	row_panel.set_meta("scifi_fx", fx)
 	session_list.add_child(row_panel)
 	session_rows[session_id] = row_panel
 	style_session_row(session_id, session_id == AgentSessionManager.active_session_id)
@@ -237,8 +242,7 @@ func build_session_row_style(selected: bool, hovered: bool) -> StyleBoxFlat:
 	style.content_margin_bottom = 4
 	if selected:
 		style.bg_color = selected_row_bg()
-		style.border_color = theme_accent_solid()
-		style.set_border_width(SIDE_LEFT, 3)
+		style.set_border_width_all(0)
 	elif hovered:
 		style.bg_color = AgentColors.sidebar_row_hover
 	else:
@@ -269,6 +273,10 @@ func style_session_row(session_id: int, selected: bool) -> void:
 		delete_button.add_theme_color_override("font_color", AgentColors.sidebar_muted)
 		delete_button.add_theme_color_override("font_hover_color", AgentColors.error)
 		delete_button.add_theme_color_override("font_pressed_color", AgentColors.error)
+
+	var fx: SessionRowSciFiFx = row_panel.get_meta("scifi_fx")
+	if fx != null:
+		fx.set_highlight(selected, theme_accent_solid())
 	pass
 
 
@@ -318,3 +326,61 @@ func can_drop_on_row(_at_position: Vector2, data: Variant, target_id: int) -> bo
 
 func drop_on_row(_at_position: Vector2, _data: Variant) -> void:
 	pass
+
+
+# ---------------------------------------------------------------------------
+# Selected row sci-fi overlay (shader: sidebar_session_row.gdshader)
+# ---------------------------------------------------------------------------
+
+class SessionRowSciFiFx extends ColorRect:
+	const SHADER := preload("res://agent/ui/shaders/sidebar_session_row.gdshader")
+	const CORNER_RADIUS := 6.0
+
+	var fx_material: ShaderMaterial
+
+
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		color = Color(1.0, 1.0, 1.0, 0.0)
+		set_anchors_preset(PRESET_FULL_RECT)
+		fx_material = ShaderMaterial.new()
+		fx_material.shader = SHADER
+		material = fx_material
+		visible = false
+		pass
+
+
+	func _ready() -> void:
+		var parent_row := get_parent() as Control
+		if parent_row != null:
+			parent_row.resized.connect(sync_uniforms)
+		resized.connect(sync_uniforms)
+		sync_uniforms()
+		pass
+
+
+	func set_highlight(active: bool, accent: Color) -> void:
+		visible = active
+		if fx_material == null:
+			return
+		fx_material.set_shader_parameter("strength", 1.0 if active else 0.0)
+		fx_material.set_shader_parameter("accent_color", accent)
+		fx_material.set_shader_parameter(
+			"is_dark",
+			1.0 if AgentColors.is_dark() else 0.0
+		)
+		sync_uniforms()
+		pass
+
+
+	func sync_uniforms() -> void:
+		if fx_material == null:
+			return
+		var sz := size
+		if sz.x < 1.0 or sz.y < 1.0:
+			var parent_row := get_parent() as Control
+			if parent_row != null:
+				sz = parent_row.size
+		fx_material.set_shader_parameter("rect_size", sz)
+		fx_material.set_shader_parameter("corner_radius", CORNER_RADIUS)
+		pass
