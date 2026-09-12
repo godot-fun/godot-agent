@@ -85,10 +85,13 @@ func setup_border_beam() -> void:
 	input_bar.clip_contents = false
 	border_beam = InputBorderBeamLayer.new()
 	border_beam.name = "BorderBeam"
-	border_beam.z_index = 2
+	border_beam.z_index = -1
 	input_bar.add_child(border_beam)
+	input_bar.move_child(border_beam, 0)
 	for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
 		border_beam.set_anchor(side, 0.0)
+	send_button.z_index = 2
+	send_button.mouse_filter = Control.MOUSE_FILTER_STOP
 	layout_border_beam()
 	refresh_border_beam()
 	pass
@@ -420,6 +423,7 @@ func layout_bar() -> void:
 
 
 func layout_send_button(is_expanded: bool) -> void:
+	send_button.visible = true
 	if is_expanded:
 		send_button.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 		send_button.offset_left = -44
@@ -432,6 +436,7 @@ func layout_send_button(is_expanded: bool) -> void:
 		send_button.offset_top = -18
 		send_button.offset_right = 18
 		send_button.offset_bottom = 18
+	send_button.z_index = 2
 	pass
 
 
@@ -461,6 +466,8 @@ func set_expanded(is_expanded: bool, animate: bool) -> void:
 
 	if is_expanded:
 		input_field.visible = true
+	else:
+		layout_send_button(false)
 
 	layout_tween.tween_method(apply_input_tween_step, 0.0, 1.0, 0.22)
 	layout_tween.finished.connect(on_input_tween_finished, CONNECT_ONE_SHOT)
@@ -474,6 +481,7 @@ func apply_input_tween_step(value: float) -> void:
 	input_wrap.offset_top = tween_bar_size.y - BOTTOM_MARGIN - height
 	input_wrap.offset_bottom = tween_bar_size.y - BOTTOM_MARGIN
 	input_inner.custom_minimum_size.y = maxf(0.0, height - 8.0)
+	layout_send_button(tween_expand_target)
 	if border_beam != null:
 		set_border_beam_to_wrap(
 			lerpf(tween_start_left, tween_target_left, value),

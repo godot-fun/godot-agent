@@ -23,7 +23,17 @@ float rounded_perimeter(vec2 size, float radius) {
 	return 2.0 * (size.x + size.y - 4.0 * r) + TAU * r;
 }
 
-// Top-left origin, clockwise from (r, 0) — matches prior GDScript path order.
+// Top-left origin, clockwise from (r, 0).
+float perimeter_at_circle(vec2 pt, vec2 size, float r) {
+	vec2 center = size * 0.5;
+	float ang = atan(pt.y - center.y, pt.x - center.x);
+	float theta = ang + HALF_PI;
+	if (theta < 0.0) {
+		theta += TAU;
+	}
+	return theta * r;
+}
+
 float perimeter_at(vec2 pt, vec2 size, float rad) {
 	float w = size.x;
 	float h = size.y;
@@ -35,40 +45,67 @@ float perimeter_at(vec2 pt, vec2 size, float rad) {
 	float y = pt.y;
 	float edge = max(1.0, min(w, h) * 0.004);
 
+	if (top <= edge && side <= edge) {
+		return perimeter_at_circle(pt, size, r);
+	}
+
 	if (y <= edge && x >= r - edge && x <= w - r + edge) {
 		return x - r;
 	}
-	if (x >= w - r - edge && y <= r + edge) {
-		vec2 c = vec2(w - r, r);
-		float ang = atan(y - c.y, x - c.x);
+	if (y <= edge && x > w - r + edge) {
+		vec2 d = pt - vec2(w - r, r);
+		float ang = atan(d.y, d.x);
 		ang = clamp(ang, -HALF_PI, 0.0);
 		return top + (ang + HALF_PI) / HALF_PI * arc;
+	}
+	if (y <= edge && x < r - edge) {
+		vec2 d = pt - vec2(r, r);
+		float ang = atan(d.y, d.x);
+		ang = clamp(ang, 3.141592653589793, 3.141592653589793 + HALF_PI);
+		return top + arc + side + arc + top + arc + side + (ang - 3.141592653589793) * r;
+	}
+	if (x >= w - r - edge && y >= edge && y <= r + edge) {
+		vec2 d = pt - vec2(w - r, r);
+		if (dot(d, d) <= (r + edge * 2.0) * (r + edge * 2.0)) {
+			float ang = atan(d.y, d.x);
+			ang = clamp(ang, -HALF_PI, 0.0);
+			return top + (ang + HALF_PI) / HALF_PI * arc;
+		}
 	}
 	if (x >= w - edge && y >= r - edge && y <= h - r + edge) {
 		return top + arc + (y - r);
 	}
-	if (y >= h - r - edge && x >= w - r - edge) {
-		vec2 c = vec2(w - r, h - r);
-		float ang = atan(y - c.y, x - c.x);
-		ang = clamp(ang, 0.0, HALF_PI);
-		return top + arc + side + ang * r;
+	if (x >= w - r - edge && y >= h - r - edge && y <= h + edge) {
+		vec2 d = pt - vec2(w - r, h - r);
+		if (dot(d, d) <= (r + edge * 2.0) * (r + edge * 2.0)) {
+			float ang = atan(d.y, d.x);
+			ang = clamp(ang, 0.0, HALF_PI);
+			return top + arc + side + ang * r;
+		}
 	}
-	if (y >= h - edge && x <= w - r + edge) {
+	if (y >= h - edge && x >= r - edge && x <= w - r + edge) {
 		return top + arc + side + arc + (w - r - x);
 	}
-	if (x <= r + edge && y >= h - r - edge) {
-		vec2 c = vec2(r, h - r);
-		float ang = atan(y - c.y, x - c.x);
-		ang = clamp(ang, HALF_PI, 3.141592653589793);
-		return top + arc + side + arc + top + (ang - HALF_PI) * r;
+	if (x <= r + edge && y >= h - r - edge && y <= h + edge) {
+		vec2 d = pt - vec2(r, h - r);
+		if (dot(d, d) <= (r + edge * 2.0) * (r + edge * 2.0)) {
+			float ang = atan(d.y, d.x);
+			ang = clamp(ang, HALF_PI, 3.141592653589793);
+			return top + arc + side + arc + top + (ang - HALF_PI) * r;
+		}
 	}
-	if (x <= edge && y <= h - r + edge) {
+	if (x <= edge && y >= r - edge && y <= h - r + edge) {
 		return top + arc + side + arc + top + arc + (h - r - y);
 	}
-	vec2 c = vec2(r, r);
-	float ang = atan(y - c.y, x - c.x);
-	ang = clamp(ang, 3.141592653589793, 3.141592653589793 + HALF_PI);
-	return top + arc + side + arc + top + arc + side + (ang - 3.141592653589793) * r;
+	if (x <= r + edge && y <= r + edge && y > edge) {
+		vec2 d = pt - vec2(r, r);
+		if (dot(d, d) <= (r + edge * 2.0) * (r + edge * 2.0)) {
+			float ang = atan(d.y, d.x);
+			ang = clamp(ang, 3.141592653589793, 3.141592653589793 + HALF_PI);
+			return top + arc + side + arc + top + arc + side + (ang - 3.141592653589793) * r;
+		}
+	}
+	return top + arc + side + arc + top + arc + side;
 }
 
 void fragment() {
