@@ -91,15 +91,6 @@ func sync_display_color(color: Color) -> void:
 	pass
 
 
-func apply_theme() -> void:
-	var outline := OrbTheme.char_outline_color()
-	for label: Label3D in free_labels:
-		label.outline_modulate = outline
-	for label: Label3D in keyword_labels:
-		label.outline_modulate = outline
-	pass
-
-
 func queue_step_phrases(text: String) -> void:
 	if text.is_empty():
 		return

@@ -70,10 +70,6 @@ text = "Play Demo"
 layout_mode = 2
 text = "Stop"
 
-[node name="ToggleTheme" type="Button" parent="Ui/Buttons"]
-layout_mode = 2
-text = "Theme: Dark"
-
 [node name="StepButtons" type="HBoxContainer" parent="Ui"]
 layout_mode = 2
 theme_override_constants/separation = 8
