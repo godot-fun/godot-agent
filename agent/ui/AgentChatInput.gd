@@ -641,7 +641,7 @@ func make_stop_icon(size: int, color: Color) -> ImageTexture:
 # ---------------------------------------------------------------------------
 
 class InputBorderBeamLayer extends ColorRect:
-	const BEAM_SHADER := preload("res://agent/ui/effects/shaders/chat_input_border_beam.gdshader")
+	const BEAM_SHADER := preload("res://agent/ui/shaders/chat_input_border_beam.gdshader")
 	## Outward margin so glow can draw outside the input panel (>= half GLOW_W in shader).
 	const BEAM_OUTSET := 4.0
 
