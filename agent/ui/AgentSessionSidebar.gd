@@ -236,7 +236,7 @@ func build_session_row_style(selected: bool, hovered: bool) -> StyleBoxFlat:
 	style.content_margin_top = 4
 	style.content_margin_bottom = 4
 	if selected:
-		style.bg_color = AgentColors.sidebar_row_selected
+		style.bg_color = selected_row_bg()
 		style.border_color = theme_accent_solid()
 		style.set_border_width(SIDE_LEFT, 3)
 	elif hovered:
@@ -257,7 +257,7 @@ func style_session_row(session_id: int, selected: bool) -> void:
 	var hovered := hover_session_id == session_id
 	row_panel.add_theme_stylebox_override("panel", build_session_row_style(selected, hovered))
 
-	var text_color := theme_accent_solid() if selected else AgentColors.sidebar_muted
+	var text_color := AgentColors.sidebar_text if selected else AgentColors.sidebar_muted
 	if hovered and not selected:
 		text_color = AgentColors.sidebar_text
 	select_button.add_theme_color_override("font_color", text_color)
@@ -279,6 +279,12 @@ func style_session_row(session_id: int, selected: bool) -> void:
 func theme_accent_solid() -> Color:
 	var c := AgentColors.theme_color
 	return Color(c.r, c.g, c.b, 1.0)
+
+
+func selected_row_bg() -> Color:
+	var accent := theme_accent_solid()
+	var mix := 0.14 if AgentColors.is_dark() else 0.10
+	return AgentColors.sidebar_row_selected.lerp(accent, mix)
 
 
 func format_session_label(session_id: int, title: String) -> String:
