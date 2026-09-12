@@ -66,13 +66,18 @@ func set_phase(new_phase: OrbPhase.Phase, tool_name: String = "") -> void:
 	pass
 
 
-func add_step_text(text: String) -> void:
+func add_step_text(text: String, stream_kind: String = OpenAiClient.STREAM_KIND_CONTENT) -> void:
 	if text.is_empty():
 		return
 	stream_char_total += text.length()
 	var cap := OrbGrowth.chunk_char_cap(stream_char_total)
-	for ch in CharStreamUtils.extract_spawn_chars(text, cap):
-		pending_chars.append(ch)
+	var tokens: Array[String] = []
+	if stream_kind == OpenAiClient.STREAM_KIND_REASONING:
+		tokens = CharStreamUtils.extract_spawn_words(text, cap)
+	else:
+		tokens = CharStreamUtils.extract_spawn_chars(text, cap)
+	for token in tokens:
+		pending_chars.append(token)
 	char_overlay.queue_step_phrases(text)
 	growth_dirty = true
 	growth_flush_timer = OrbGrowth.TEXT_BATCH_INTERVAL_S
@@ -89,8 +94,8 @@ func flush_growth() -> void:
 	pass
 
 
-func add_stream_chunk(chunk: String) -> void:
-	add_step_text(chunk)
+func add_stream_chunk(chunk: String, stream_kind: String = OpenAiClient.STREAM_KIND_CONTENT) -> void:
+	add_step_text(chunk, stream_kind)
 	pass
 
 

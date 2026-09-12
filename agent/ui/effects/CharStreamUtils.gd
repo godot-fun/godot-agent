@@ -29,6 +29,22 @@ static func extract_spawn_chars(chunk: String, max_count: int = MAX_SPAWN_PER_CH
 	return result
 
 
+## Thinking / reasoning stream — float whole tokens split on whitespace.
+static func extract_spawn_words(chunk: String, max_count: int = MAX_SPAWN_PER_CHUNK) -> Array[String]:
+	var result: Array[String] = []
+	if chunk.is_empty():
+		return result
+	var normalized := chunk.replace("\r", " ").replace("\n", " ").replace("\t", " ")
+	for part in normalized.split(" ", false):
+		var word := part.strip_edges()
+		if word.is_empty():
+			continue
+		result.append(word)
+		if result.size() >= max_count:
+			return result
+	return result
+
+
 ## Words and short clauses taken directly from agent step text (CN + EN + paths).
 static func extract_step_phrases(text: String, max_count: int = 5) -> Array[String]:
 	var result: Array[String] = []

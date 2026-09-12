@@ -175,7 +175,7 @@ func on_message_update(session_id: int, chunk: String, stream_kind: String) -> v
 		transition_to(OrbPhase.Phase.REASONING)
 	elif phase != OrbPhase.Phase.TOOL_EXEC:
 		transition_to(OrbPhase.Phase.GENERATING)
-	jarvis_orb.add_stream_chunk(chunk)
+	jarvis_orb.add_stream_chunk(chunk, stream_kind)
 	pass
 
 

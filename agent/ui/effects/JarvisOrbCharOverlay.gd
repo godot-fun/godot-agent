@@ -194,6 +194,13 @@ func spawn_char(ch: String) -> void:
 	if neuron_net == null or free_labels.is_empty():
 		return
 	var label: Label3D = free_labels.pop_back()
+	var token_len := ch.length()
+	if token_len > 1:
+		label.font_size = 16 if token_len > 10 else 18
+		label.pixel_size = 0.00135 if token_len > 10 else 0.00155
+	else:
+		label.font_size = 20
+		label.pixel_size = 0.0018
 	var near_index := rng.randi_range(0, maxi(neuron_net.get_positions().size() - 1, 0))
 	var particle := CharParticle.new()
 	var speed: float = rng.randf_range(OrbVisualScale.PARTICLE_SPEED_MIN, OrbVisualScale.PARTICLE_SPEED_MAX)
