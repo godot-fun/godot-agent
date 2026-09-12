@@ -9,10 +9,12 @@ var demo_session_id: int = AgentSessionManager.INVALID_SESSION_ID
 var demo_running: bool = false
 var demo_generation: int = 0
 
+@onready var background: ColorRect = $Background
 @onready var orb_controller: AgentOrbController = $OrbLayer/AgentOrbController
 @onready var status_label: Label = $Ui/StatusLabel
 @onready var play_button: Button = $Ui/Buttons/PlayDemo
 @onready var stop_button: Button = $Ui/Buttons/Stop
+@onready var theme_button: Button = $Ui/Buttons/ToggleTheme
 @onready var reasoning_button: Button = $Ui/StepButtons/Reasoning
 @onready var generate_button: Button = $Ui/StepButtons/Generate
 @onready var tool_button: Button = $Ui/StepButtons/Tool
@@ -22,14 +24,39 @@ var demo_generation: int = 0
 func _ready() -> void:
 	AgentColors.load_saved_theme()
 	set_anchors_preset(Control.PRESET_FULL_RECT)
+	AgentEvents.events.theme_changed.connect(on_theme_changed)
+	apply_scene_theme()
 	setup_demo_session()
 	play_button.pressed.connect(on_play_demo_pressed)
 	stop_button.pressed.connect(on_stop_pressed)
+	theme_button.pressed.connect(on_toggle_theme_pressed)
 	reasoning_button.pressed.connect(on_reasoning_pressed)
 	generate_button.pressed.connect(on_generate_pressed)
 	tool_button.pressed.connect(on_tool_pressed)
 	error_button.pressed.connect(on_error_end_pressed)
 	set_status("按 Play Demo 自动播放完整流程，或用下方按钮单步触发。")
+	pass
+
+
+func on_theme_changed(_is_dark: bool) -> void:
+	apply_scene_theme()
+	pass
+
+
+func apply_scene_theme() -> void:
+	if AgentColors.is_dark():
+		background.color = Color(0.02, 0.04, 0.07, 1.0)
+	else:
+		background.color = Color(0.94, 0.96, 0.99, 1.0)
+	if theme_button != null:
+		theme_button.text = "Theme: Dark" if AgentColors.is_dark() else "Theme: Light"
+	if orb_controller != null:
+		orb_controller.on_theme_changed(AgentColors.is_dark())
+	pass
+
+
+func on_toggle_theme_pressed() -> void:
+	AgentColors.toggle_theme()
 	pass
 
 

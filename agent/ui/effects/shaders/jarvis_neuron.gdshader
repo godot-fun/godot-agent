@@ -3,11 +3,22 @@ render_mode blend_add, depth_draw_opaque, cull_back, unshaded;
 
 uniform vec4 base_color : source_color = vec4(0.0, 0.9, 1.0, 0.85);
 uniform float pulse : hint_range(0.0, 2.0) = 1.0;
-uniform float time_scale : hint_range(0.0, 4.0) = 1.0;
+uniform float emission_scale : hint_range(0.5, 3.0) = 1.65;
+
+varying float flicker_phase;
+varying float flicker_speed;
+varying float local_pulse;
+
+void vertex() {
+	flicker_phase = INSTANCE_CUSTOM.r * 6.28318;
+	flicker_speed = 1.6 + INSTANCE_CUSTOM.g * 2.4;
+	local_pulse = pulse * (0.72 + INSTANCE_CUSTOM.b * 0.45);
+}
 
 void fragment() {
-	float flicker = 0.85 + 0.15 * sin(TIME * 3.5 * time_scale + VERTEX.x * 12.0 + VERTEX.y * 7.0);
-	ALBEDO = base_color.rgb;
-	EMISSION = base_color.rgb * pulse * flicker * 1.6;
-	ALPHA = base_color.a * pulse;
+	float flicker = 0.82 + 0.18 * sin(TIME * flicker_speed + flicker_phase + VERTEX.x * 4.0 + VERTEX.z * 3.0);
+	vec3 col = base_color.rgb * local_pulse * flicker;
+	ALBEDO = col;
+	EMISSION = col * emission_scale;
+	ALPHA = base_color.a * local_pulse * (0.82 + flicker * 0.18);
 }

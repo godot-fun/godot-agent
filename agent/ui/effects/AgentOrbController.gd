@@ -11,6 +11,7 @@ var vignette: JarvisOrbOverlay
 var viewport_container: SubViewportContainer
 var sub_viewport: SubViewport
 var jarvis_orb: JarvisOrb
+var world_environment: WorldEnvironment
 var fade_tween: Tween
 
 
@@ -40,19 +41,17 @@ func build_scene() -> void:
 	viewport_container.add_child(sub_viewport)
 
 	var env := WorldEnvironment.new()
+	world_environment = env
 	var environment := Environment.new()
 	environment.background_mode = Environment.BG_COLOR
 	environment.background_color = Color(0, 0, 0, 0)
 	environment.glow_enabled = true
-	environment.glow_intensity = 1.15
-	environment.glow_strength = 0.85
-	environment.glow_bloom = 0.28
 	environment.glow_blend_mode = Environment.GLOW_BLEND_MODE_SOFTLIGHT
 	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	environment.adjustment_enabled = true
-	environment.adjustment_brightness = 1.05
 	env.environment = environment
 	sub_viewport.add_child(env)
+	apply_render_theme()
 
 	var camera := Camera3D.new()
 	camera.position = Vector3(0.0, 0.05, OrbVisualScale.CAMERA_DISTANCE)
@@ -208,9 +207,30 @@ func on_chat_entry_add(session_id: int, entry: ChatEntry) -> void:
 
 
 func on_theme_changed(_is_dark: bool) -> void:
+	apply_render_theme()
+	if jarvis_orb != null:
+		jarvis_orb.apply_theme()
 	if vignette != null:
-		vignette.set_strength(0.45 if AgentColors.is_dark() else 0.22)
+		vignette.apply_theme(AgentColors.is_dark())
+		if visible:
+			vignette.set_strength(OrbTheme.vignette_strength(AgentColors.is_dark()))
 	pass
+
+
+func apply_render_theme() -> void:
+	if world_environment == null or world_environment.environment == null:
+		return
+	var settings := OrbTheme.render_settings()
+	var environment := world_environment.environment
+	environment.glow_intensity = settings.glow_intensity
+	environment.glow_strength = settings.glow_strength
+	environment.glow_bloom = settings.glow_bloom
+	environment.adjustment_brightness = settings.adjustment_brightness
+	pass
+
+
+func overlay_alpha() -> float:
+	return OrbTheme.render_settings().orb_overlay_alpha
 
 
 func transition_to(new_phase: OrbPhase.Phase, tool_name: String = "") -> void:
@@ -227,19 +247,20 @@ func show_orb() -> void:
 		fade_tween.kill()
 	fade_tween = create_tween()
 	fade_tween.set_parallel(true)
-	fade_tween.tween_property(self, "modulate:a", 0.88, 0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	fade_tween.tween_property(self, "modulate:a", overlay_alpha(), 0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	if vignette != null:
-		var target: float = 0.45 if AgentColors.is_dark() else 0.22
+		var target: float = OrbTheme.vignette_strength(AgentColors.is_dark())
 		fade_tween.tween_method(vignette.set_strength, 0.0, target, 0.45)
 	pass
 
 
 func show_orb_immediate() -> void:
 	visible = true
-	modulate.a = 0.88
+	modulate.a = overlay_alpha()
 	scale = Vector2.ONE
 	if vignette != null:
-		vignette.set_strength(0.45 if AgentColors.is_dark() else 0.22)
+		vignette.apply_theme(AgentColors.is_dark())
+		vignette.set_strength(OrbTheme.vignette_strength(AgentColors.is_dark()))
 	pass
 
 

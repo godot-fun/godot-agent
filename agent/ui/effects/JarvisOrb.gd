@@ -12,6 +12,7 @@ var spin_speed: float = 0.7
 var wobble: float = 0.0
 var stream_char_total: int = 0
 var color_controller: OrbColorController = OrbColorController.new()
+var filament_color_controller: OrbColorController = OrbColorController.new()
 
 var pending_chars: Array[String] = []
 var growth_dirty: bool = false
@@ -29,20 +30,22 @@ func _ready() -> void:
 	char_overlay = JarvisOrbCharOverlay.new()
 	char_overlay.setup(neuron_net)
 	add_child(char_overlay)
-	color_controller.snap_to(OrbPhase.color_for(OrbPhase.Phase.AWAKE))
-	apply_display_color()
+	apply_theme(false)
 	pass
 
 
 func _process(delta: float) -> void:
-	rotate_y(deg_to_rad(spin_speed) * delta)
+	var time_s: float = Time.get_ticks_msec() * 0.001
+	rotate_y(deg_to_rad(spin_speed) * delta + sin(time_s * 0.31) * delta * 0.08)
 	if phase == OrbPhase.Phase.REASONING:
 		wobble = lerpf(wobble, 0.12, delta * 2.0)
 	else:
 		wobble = lerpf(wobble, 0.0, delta * 3.0)
-	rotation.x = sin(Time.get_ticks_msec() * 0.0012) * wobble
+	rotation.x = sin(time_s * 0.97) * wobble
+	rotation.z = sin(time_s * 0.63) * wobble * 0.35
 
 	color_controller.update(delta)
+	filament_color_controller.update(delta)
 	apply_display_color()
 
 	if growth_flush_timer > 0.0:
@@ -54,7 +57,8 @@ func _process(delta: float) -> void:
 
 func set_phase(new_phase: OrbPhase.Phase, tool_name: String = "") -> void:
 	phase = new_phase
-	color_controller.set_target(OrbPhase.color_for(new_phase))
+	color_controller.set_target(OrbTheme.neuron_color_for(new_phase))
+	filament_color_controller.set_target(OrbTheme.filament_color_for(new_phase))
 	char_overlay.set_phase(new_phase, tool_name)
 	rings.set_tool_mode(new_phase == OrbPhase.Phase.TOOL_EXEC)
 	match new_phase:
@@ -107,16 +111,35 @@ func apply_growth() -> void:
 
 func apply_display_color() -> void:
 	var color: Color = color_controller.display_color
-	neuron_net.apply_display_color(color)
+	var filament_color: Color = filament_color_controller.display_color
+	neuron_net.apply_display_color(color, filament_color)
 	rings.apply_display_color(color)
-	char_overlay.sync_display_color(color)
+	char_overlay.sync_display_color(OrbTheme.char_color_for(phase))
+	pass
+
+
+func apply_theme(smooth: bool = true) -> void:
+	var neuron_color := OrbTheme.neuron_color_for(phase)
+	var filament_color := OrbTheme.filament_color_for(phase)
+	if phase == OrbPhase.Phase.IDLE:
+		neuron_color = OrbTheme.neuron_color_for(OrbPhase.Phase.AWAKE)
+		filament_color = OrbTheme.filament_color_for(OrbPhase.Phase.AWAKE)
+	if smooth:
+		color_controller.set_target(neuron_color)
+		filament_color_controller.set_target(filament_color)
+	else:
+		color_controller.snap_to(neuron_color)
+		filament_color_controller.snap_to(filament_color)
+	char_overlay.apply_theme()
+	rings.apply_theme()
+	apply_display_color()
 	pass
 
 
 func reset_growth() -> void:
 	if growth_dirty:
 		flush_growth()
-	color_controller.snap_to(OrbPhase.color_for(OrbPhase.Phase.IDLE))
+	apply_theme(false)
 	stream_char_total = 0
 	pending_chars.clear()
 	growth_dirty = false

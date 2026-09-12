@@ -35,21 +35,11 @@ static func path_style_for(phase: Phase) -> PathStyle:
 
 
 static func color_for(phase: Phase) -> Color:
-	match phase:
-		Phase.REASONING:
-			return Color(0.66, 0.33, 0.97, 1.0)
-		Phase.GENERATING:
-			return Color(0.0, 0.92, 1.0, 1.0)
-		Phase.TOOL_EXEC:
-			return Color(0.96, 0.72, 0.26, 1.0)
-		Phase.SUCCESS:
-			return Color(0.0, 0.92, 0.63, 1.0)
-		Phase.ERROR:
-			return Color(1.0, 0.27, 0.4, 1.0)
-		Phase.AWAKE, Phase.TURN_COOLDOWN:
-			return Color(0.0, 0.9, 1.0, 1.0)
-		_:
-			return Color(0.0, 0.85, 1.0, 0.6)
+	return OrbTheme.neuron_color_for(phase)
+
+
+static func filament_color_for(phase: Phase) -> Color:
+	return OrbTheme.filament_color_for(phase)
 
 
 static func keywords_for(phase: Phase, tool_name: String = "") -> Array[String]:
