@@ -82,6 +82,7 @@ func on_theme_color_changed(_color: Color) -> void:
 
 
 func setup_border_beam() -> void:
+	input_bar.clip_contents = false
 	border_beam = InputBorderBeamLayer.new()
 	border_beam.name = "BorderBeam"
 	border_beam.z_index = 2
@@ -96,10 +97,22 @@ func setup_border_beam() -> void:
 func layout_border_beam() -> void:
 	if border_beam == null:
 		return
-	border_beam.offset_left = input_wrap.offset_left
-	border_beam.offset_top = input_wrap.offset_top
-	border_beam.offset_right = input_wrap.offset_right
-	border_beam.offset_bottom = input_wrap.offset_bottom
+	set_border_beam_to_wrap(
+		input_wrap.offset_left,
+		input_wrap.offset_top,
+		input_wrap.offset_right,
+		input_wrap.offset_bottom
+	)
+	pass
+
+
+func set_border_beam_to_wrap(wrap_left: float, wrap_top: float, wrap_right: float, wrap_bottom: float) -> void:
+	var pad := InputBorderBeamLayer.BEAM_OUTSET
+	border_beam.offset_left = wrap_left - pad
+	border_beam.offset_top = wrap_top - pad
+	border_beam.offset_right = wrap_right + pad
+	border_beam.offset_bottom = wrap_bottom + pad
+	border_beam.sync_shader_uniforms()
 	pass
 
 
@@ -462,10 +475,12 @@ func apply_input_tween_step(value: float) -> void:
 	input_wrap.offset_bottom = tween_bar_size.y - BOTTOM_MARGIN
 	input_inner.custom_minimum_size.y = maxf(0.0, height - 8.0)
 	if border_beam != null:
-		border_beam.offset_left = lerpf(tween_start_left, tween_target_left, value)
-		border_beam.offset_right = tween_bar_size.x - SIDE_MARGIN
-		border_beam.offset_top = tween_bar_size.y - BOTTOM_MARGIN - height
-		border_beam.offset_bottom = tween_bar_size.y - BOTTOM_MARGIN
+		set_border_beam_to_wrap(
+			lerpf(tween_start_left, tween_target_left, value),
+			tween_bar_size.y - BOTTOM_MARGIN - height,
+			tween_bar_size.x - SIDE_MARGIN,
+			tween_bar_size.y - BOTTOM_MARGIN
+		)
 		border_beam.set_shape(tween_expand_target)
 	pass
 
@@ -619,6 +634,8 @@ func make_stop_icon(size: int, color: Color) -> ImageTexture:
 
 class InputBorderBeamLayer extends ColorRect:
 	const BEAM_SHADER := preload("res://agent/ui/effects/shaders/chat_input_border_beam.gdshader")
+	## Outward margin so glow can draw outside the input panel (>= half GLOW_W in shader).
+	const BEAM_OUTSET := 4.0
 
 	var expanded_shape: bool = false
 	var highlight_strength: float = 0.55
@@ -627,8 +644,9 @@ class InputBorderBeamLayer extends ColorRect:
 
 	func _ready() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		clip_contents = false
 		set_anchors_preset(PRESET_FULL_RECT)
-		color = Color(1.0, 1.0, 1.0, 1.0)
+		color = Color(1.0, 1.0, 1.0, 0.0)
 		beam_material = ShaderMaterial.new()
 		beam_material.shader = BEAM_SHADER
 		material = beam_material
@@ -656,10 +674,18 @@ class InputBorderBeamLayer extends ColorRect:
 		pass
 
 
+	func wrap_size_from_layout() -> Vector2:
+		var beam_size := Vector2(offset_right - offset_left, offset_bottom - offset_top)
+		if beam_size.x < 1.0 or beam_size.y < 1.0:
+			beam_size = size
+		return beam_size - Vector2(BEAM_OUTSET * 2.0, BEAM_OUTSET * 2.0)
+
+
 	func corner_radius_for_size() -> float:
+		var wrap_size := wrap_size_from_layout()
 		if expanded_shape:
 			return 16.0
-		return size.y * 0.5
+		return maxf(wrap_size.y * 0.5, 1.0)
 
 
 	func sync_shader_uniforms() -> void:
@@ -672,4 +698,5 @@ class InputBorderBeamLayer extends ColorRect:
 		beam_material.set_shader_parameter("strength", highlight_strength)
 		beam_material.set_shader_parameter("corner_radius", corner_radius_for_size())
 		beam_material.set_shader_parameter("rect_size", beam_size)
+		beam_material.set_shader_parameter("edge_pad", BEAM_OUTSET)
 		pass

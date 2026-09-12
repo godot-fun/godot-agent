@@ -7,6 +7,7 @@ uniform float corner_radius : hint_range(0.0, 256.0) = 16.0;
 uniform float beam_speed : hint_range(0.0, 2.0) = 0.42;
 uniform float beam_span : hint_range(0.05, 0.5) = 0.2;
 uniform vec2 rect_size = vec2(400.0, 88.0);
+uniform float edge_pad : hint_range(0.0, 24.0) = 4.0;
 
 const float BORDER_W = 2.0;
 const float GLOW_W = 5.0;
@@ -71,9 +72,9 @@ float perimeter_at(vec2 pt, vec2 size, float rad) {
 }
 
 void fragment() {
-	vec2 inner = max(rect_size - vec2(BORDER_W), vec2(2.0));
-	vec2 half_size = inner * 0.5;
-	float r = min(corner_radius, min(inner.x, inner.y) * 0.5);
+	vec2 wrap_size = max(rect_size - vec2(edge_pad * 2.0), vec2(2.0));
+	vec2 half_size = wrap_size * 0.5;
+	float r = min(corner_radius, min(wrap_size.x, wrap_size.y) * 0.5);
 	vec2 p = (UV - 0.5) * rect_size;
 
 	float d = sd_rounded_box(p, half_size, r);
@@ -84,8 +85,8 @@ void fragment() {
 		vec2 grad = normalize(vec2(dFdx(d), dFdy(d)));
 		vec2 on_edge_tl = p - grad * d + half_size;
 
-		float perim = rounded_perimeter(inner, r);
-		float along = perimeter_at(on_edge_tl, inner, r);
+		float perim = rounded_perimeter(wrap_size, r);
+		float along = perimeter_at(on_edge_tl, wrap_size, r);
 		float head = fract(TIME * beam_speed);
 		// Distance backward along perimeter from the moving head (tail behind, head at u=0).
 		float u = fract(head - along / perim + 1.0);
