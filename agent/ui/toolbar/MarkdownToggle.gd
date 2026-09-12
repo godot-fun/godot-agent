@@ -5,7 +5,7 @@ extends RefCounted
 
 const SETTING_KEY := "agent_markdown_enabled"
 
-static var markdown_enabled: bool = false
+static var markdown_enabled: bool = true
 
 
 ## Respect toolbar setting; tool bubbles always stay plain text.
@@ -19,7 +19,7 @@ var button: Button
 
 
 func setup(p_button: Button) -> void:
-	markdown_enabled = Setting.get_bool(SETTING_KEY, false)
+	markdown_enabled = Setting.get_bool(SETTING_KEY, true)
 	button = p_button
 	button.toggled.connect(on_toggled)
 	AgentEvents.events.theme_changed.connect(apply_theme)
@@ -28,7 +28,7 @@ func setup(p_button: Button) -> void:
 
 
 func apply_theme(_is_dark: bool = false) -> void:
-	markdown_enabled = Setting.get_bool(SETTING_KEY, false)
+	markdown_enabled = Setting.get_bool(SETTING_KEY, true)
 	AgentToolbarButton.style(
 			button,
 			"Show raw text" if markdown_enabled else "Render Markdown as BBCode"
