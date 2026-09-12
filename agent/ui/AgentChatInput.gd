@@ -617,49 +617,42 @@ func make_stop_icon(size: int, color: Color) -> ImageTexture:
 # Border beam overlay (theme-color flowing stroke on input outer edge)
 # ---------------------------------------------------------------------------
 
-class InputBorderBeamLayer extends Control:
-	const BEAM_SPEED := 0.42
-	const BEAM_SPAN := 0.20
-	const BORDER_WIDTH := 2.0
-	const GLOW_WIDTH := 5.0
-	const BEAM_CORE_ALPHA := 0.95
-	const BEAM_TAIL_SAMPLES := 48
+class InputBorderBeamLayer extends ColorRect:
+	const BEAM_SHADER := preload("res://agent/ui/effects/shaders/chat_input_border_beam.gdshader")
 
 	var expanded_shape: bool = false
 	var highlight_strength: float = 0.55
-	var phase: float = 0.0
+	var beam_material: ShaderMaterial
 
 
 	func _ready() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 		set_anchors_preset(PRESET_FULL_RECT)
+		color = Color(1.0, 1.0, 1.0, 1.0)
+		beam_material = ShaderMaterial.new()
+		beam_material.shader = BEAM_SHADER
+		material = beam_material
 		AgentEvents.events.theme_color_changed.connect(on_theme_color_changed)
 		AgentEvents.events.theme_changed.connect(on_theme_color_changed)
-		pass
-
-
-	func _process(delta: float) -> void:
-		if not is_visible_in_tree():
-			return
-		phase = fmod(phase + delta * BEAM_SPEED, 1.0)
-		queue_redraw()
+		resized.connect(sync_shader_uniforms)
+		sync_shader_uniforms()
 		pass
 
 
 	func on_theme_color_changed(_unused = null) -> void:
-		queue_redraw()
+		sync_shader_uniforms()
 		pass
 
 
 	func set_shape(is_expanded: bool) -> void:
 		expanded_shape = is_expanded
-		queue_redraw()
+		sync_shader_uniforms()
 		pass
 
 
 	func set_highlight_strength(strength: float) -> void:
 		highlight_strength = clampf(strength, 0.0, 1.0)
-		queue_redraw()
+		sync_shader_uniforms()
 		pass
 
 
@@ -669,98 +662,14 @@ class InputBorderBeamLayer extends Control:
 		return size.y * 0.5
 
 
-	func perimeter(rect_size: Vector2, radius: float) -> float:
-		var r := minf(radius, minf(rect_size.x, rect_size.y) * 0.5)
-		return 2.0 * (rect_size.x + rect_size.y - 4.0 * r) + TAU * r
-
-
-	func point_on_rounded_rect(rect_size: Vector2, radius: float, dist: float) -> Vector2:
-		var w := rect_size.x
-		var h := rect_size.y
-		var r := minf(radius, minf(w, h) * 0.5)
-		var top := w - 2.0 * r
-		var side := h - 2.0 * r
-		var arc := PI * 0.5 * r
-		var seg := [top, arc, side, arc, top, arc, side, arc]
-		var total := 0.0
-		for length in seg:
-			total += length
-		dist = fposmod(dist, total)
-		var x := r
-		var y := 0.0
-		var heading := 0.0
-		for length in seg:
-			if dist <= length:
-				var t: float = dist / length if length > 0.0 else 0.0
-				match int(heading):
-					0:
-						x = r + t * top
-						y = 0.0
-					1:
-						var angle := -PI * 0.5 + t * PI * 0.5
-						x = w - r + cos(angle) * r
-						y = r + sin(angle) * r
-					2:
-						x = w
-						y = r + t * side
-					3:
-						var angle2 := t * PI * 0.5
-						x = w - r + cos(angle2) * r
-						y = h - r + sin(angle2) * r
-					4:
-						x = w - r - t * top
-						y = h
-					5:
-						var angle3 := PI * 0.5 + t * PI * 0.5
-						x = r + cos(angle3) * r
-						y = h - r + sin(angle3) * r
-					6:
-						x = 0.0
-						y = h - r - t * side
-					_:
-						var angle4 := PI + t * PI * 0.5
-						x = r + cos(angle4) * r
-						y = r + sin(angle4) * r
-				return Vector2(x, y)
-			dist -= length
-			heading += 1.0
-		return Vector2(r, 0.0)
-
-
-	func _draw() -> void:
-		if size.x < 4.0 or size.y < 4.0:
+	func sync_shader_uniforms() -> void:
+		if beam_material == null:
 			return
-		var rect_size := size
-		var inset := BORDER_WIDTH * 0.5
-		var inner := Rect2(inset, inset, rect_size.x - inset * 2.0, rect_size.y - inset * 2.0)
-		if inner.size.x <= 2.0 or inner.size.y <= 2.0:
-			return
-		var radius := corner_radius_for_size()
-		var accent := AgentColors.theme_color
-		var strength := highlight_strength
-
-		var perim := perimeter(inner.size, radius)
-		var head_dist := phase * perim
-		var span := perim * BEAM_SPAN
-		var points: PackedVector2Array = []
-		var alphas: PackedFloat32Array = []
-		for i in BEAM_TAIL_SAMPLES + 1:
-			var t := float(i) / float(BEAM_TAIL_SAMPLES)
-			var along := head_dist - span * (1.0 - t)
-			var local := point_on_rounded_rect(inner.size, radius, along)
-			points.append(inner.position + local)
-			alphas.append(pow(t, 1.6))
-
-		if points.size() >= 2:
-			for i in range(points.size() - 1):
-				var a0 := alphas[i] * strength
-				var a1 := alphas[i + 1] * strength
-				if a0 < 0.02 and a1 < 0.02:
-					continue
-				var glow := accent
-				glow.a = maxf(a0, a1) * 0.35
-				draw_line(points[i], points[i + 1], glow, GLOW_WIDTH, true)
-				var core := accent.lightened(0.08)
-				core.a = maxf(a0, a1) * BEAM_CORE_ALPHA
-				draw_line(points[i], points[i + 1], core, BORDER_WIDTH, true)
+		var beam_size := Vector2(offset_right - offset_left, offset_bottom - offset_top)
+		if beam_size.x < 1.0 or beam_size.y < 1.0:
+			beam_size = size
+		beam_material.set_shader_parameter("accent_color", AgentColors.theme_color)
+		beam_material.set_shader_parameter("strength", highlight_strength)
+		beam_material.set_shader_parameter("corner_radius", corner_radius_for_size())
+		beam_material.set_shader_parameter("rect_size", beam_size)
 		pass
