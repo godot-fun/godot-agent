@@ -1,10 +1,20 @@
 class_name JarvisOrbNeuronNet
 extends Node3D
 
-## Brain-shaped neuron point cloud + synapse filaments — grows incrementally with stream volume.
+## Two-layer neuron net — dense inner core + outer shell, synapse filaments, stream-driven growth.
+
+const LAYER_INNER := 0
+const LAYER_OUTER := 1
+const INNER_LAYER_RATIO := 0.36
+const INNER_CORE_RADIUS := 0.34
+## Outer shell sits in a thin band well outside the inner core (see INNER_CORE_RADIUS).
+const OUTER_SHELL_RADIUS_CENTER := 1.22
+const OUTER_SHELL_RADIUS_SPREAD := 0.035
 
 const NEIGHBORS := 3
-const MAX_EDGE_DIST := 0.55
+const INNER_NEIGHBORS := 4
+const OUTER_MAX_EDGE_DIST := 0.68
+const INNER_MAX_EDGE_DIST := 0.26
 const FILAMENT_SAMPLE_STRIDE := 2
 ## Screen-space synapse width (expanded in jarvis_filament.gdshader vertex).
 const FILAMENT_LINE_WIDTH_PX := 0.85
@@ -19,7 +29,9 @@ var neuron_speeds: PackedFloat32Array = PackedFloat32Array()
 var neuron_amps: PackedFloat32Array = PackedFloat32Array()
 var neuron_tangent_a: PackedVector3Array = PackedVector3Array()
 var neuron_tangent_b: PackedVector3Array = PackedVector3Array()
-var synapse_pairs: Array[Vector2i] = []
+var neuron_layers: PackedByteArray = PackedByteArray()
+var synapse_pairs_inner: Array[Vector2i] = []
+var synapse_pairs_outer: Array[Vector2i] = []
 var motion_time: float = 0.0
 var wander_speed_scale: float = 0.75
 var pulse_levels: PackedFloat32Array = PackedFloat32Array()
@@ -32,22 +44,33 @@ var rebuild_cooldown: float = 0.0
 var filament_dirty: bool = false
 
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
-var sphere_mesh: SphereMesh
+var sphere_mesh_inner: SphereMesh
+var sphere_mesh_outer: SphereMesh
 
-var multimesh_instance: MultiMeshInstance3D
-var filament_mesh: MeshInstance3D
-var filament_surface: ArrayMesh
-var neuron_shader: ShaderMaterial
-var filament_shader: ShaderMaterial
+var multimesh_inner: MultiMeshInstance3D
+var multimesh_outer: MultiMeshInstance3D
+var filament_mesh_inner: MeshInstance3D
+var filament_mesh_outer: MeshInstance3D
+var filament_surface_inner: ArrayMesh
+var filament_surface_outer: ArrayMesh
+var neuron_shader_inner: ShaderMaterial
+var neuron_shader_outer: ShaderMaterial
+var filament_shader_inner: ShaderMaterial
+var filament_shader_outer: ShaderMaterial
 
 
 func _ready() -> void:
 	rng.randomize()
-	sphere_mesh = SphereMesh.new()
-	sphere_mesh.radius = 0.018
-	sphere_mesh.height = 0.036
-	sphere_mesh.radial_segments = 6
-	sphere_mesh.rings = 4
+	sphere_mesh_inner = SphereMesh.new()
+	sphere_mesh_inner.radius = 0.011
+	sphere_mesh_inner.height = 0.022
+	sphere_mesh_inner.radial_segments = 6
+	sphere_mesh_inner.rings = 3
+	sphere_mesh_outer = SphereMesh.new()
+	sphere_mesh_outer.radius = 0.018
+	sphere_mesh_outer.height = 0.036
+	sphere_mesh_outer.radial_segments = 6
+	sphere_mesh_outer.rings = 4
 	rebuild_neurons(OrbGrowth.NEURON_MIN)
 	var vp := get_viewport()
 	if vp != null and not vp.size_changed.is_connected(sync_filament_viewport_uniform):
@@ -81,9 +104,11 @@ func _process(delta: float) -> void:
 			continue
 		pulse_index += 1
 
-	if neuron_shader != null:
-		var avg_pulse: float = 0.65 + _average_pulse() * 0.55
-		neuron_shader.set_shader_parameter("pulse", avg_pulse)
+	var avg_pulse: float = 0.65 + _average_pulse() * 0.55
+	if neuron_shader_inner != null:
+		neuron_shader_inner.set_shader_parameter("pulse", avg_pulse * 1.12)
+	if neuron_shader_outer != null:
+		neuron_shader_outer.set_shader_parameter("pulse", avg_pulse)
 
 	motion_time += delta * wander_speed_scale
 	update_neuron_motion()
@@ -146,50 +171,62 @@ func pulse_neuron(index: int, strength: float = 1.0) -> void:
 func pulse_random(strength: float = 0.8) -> void:
 	if neuron_positions.is_empty():
 		return
-	pulse_neuron(rng.randi_range(0, neuron_positions.size() - 1), strength)
+	var inner_indices := collect_layer_indices(LAYER_INNER)
+	if not inner_indices.is_empty() and rng.randf() < 0.58:
+		pulse_neuron(inner_indices[rng.randi_range(0, inner_indices.size() - 1)], strength * 1.05)
+		return
+	var outer_indices := collect_layer_indices(LAYER_OUTER)
+	if outer_indices.is_empty():
+		return
+	pulse_neuron(outer_indices[rng.randi_range(0, outer_indices.size() - 1)], strength)
 	pass
 
 
 func apply_display_color(color: Color) -> void:
-	if neuron_shader != null:
-		neuron_shader.set_shader_parameter("base_color", Color(color.r, color.g, color.b, 0.85))
-	if filament_shader != null:
-		sync_filament_theme()
+	if neuron_shader_inner != null:
+		neuron_shader_inner.set_shader_parameter("base_color", Color(color.r, color.g, color.b, 0.92))
+	if neuron_shader_outer != null:
+		neuron_shader_outer.set_shader_parameter("base_color", Color(color.r, color.g, color.b, 0.72))
+	sync_filament_theme()
 	pass
 
 
 func sync_filament_theme() -> void:
-	if filament_shader == null:
-		return
-	filament_shader.set_shader_parameter("line_color", SYNAPSE_LINE_COLOR)
-	filament_shader.set_shader_parameter(
-		"line_strength",
-		0.78 if AgentColors.is_dark() else 0.55
-	)
-	filament_shader.set_shader_parameter("line_width_px", FILAMENT_LINE_WIDTH_PX)
-	filament_shader.set_shader_parameter("line_aa_px", FILAMENT_LINE_AA_PX)
+	var inner_strength := 0.88 if AgentColors.is_dark() else 0.62
+	var outer_strength := 0.72 if AgentColors.is_dark() else 0.48
+	if filament_shader_inner != null:
+		filament_shader_inner.set_shader_parameter("line_color", SYNAPSE_LINE_COLOR)
+		filament_shader_inner.set_shader_parameter("line_strength", inner_strength)
+		filament_shader_inner.set_shader_parameter("line_width_px", FILAMENT_LINE_WIDTH_PX * 0.95)
+		filament_shader_inner.set_shader_parameter("line_aa_px", FILAMENT_LINE_AA_PX)
+	if filament_shader_outer != null:
+		filament_shader_outer.set_shader_parameter("line_color", SYNAPSE_LINE_COLOR)
+		filament_shader_outer.set_shader_parameter("line_strength", outer_strength)
+		filament_shader_outer.set_shader_parameter("line_width_px", FILAMENT_LINE_WIDTH_PX)
+		filament_shader_outer.set_shader_parameter("line_aa_px", FILAMENT_LINE_AA_PX)
 	sync_filament_viewport_uniform()
 	pass
 
 
 func sync_filament_viewport_uniform() -> void:
-	if filament_shader == null:
-		return
 	var vp := get_viewport()
 	if vp == null:
 		return
 	var size := Vector2(vp.size)
 	if size.x < 1.0 or size.y < 1.0:
 		size = vp.get_visible_rect().size
-	filament_shader.set_shader_parameter("viewport_size", size)
+	if filament_shader_inner != null:
+		filament_shader_inner.set_shader_parameter("viewport_size", size)
+	if filament_shader_outer != null:
+		filament_shader_outer.set_shader_parameter("viewport_size", size)
 	pass
 
 
 func rebuild_neurons(count: int) -> void:
 	clear_meshes()
 	current_neuron_count = count
-	neuron_anchors = generate_brain_points(count)
-	neuron_positions = neuron_anchors.duplicate()
+	var inner_n := target_inner_count(count)
+	assign_layer_points(inner_n, count - inner_n)
 	init_motion_params(0, current_neuron_count)
 	pulse_levels.resize(neuron_positions.size())
 	pulse_levels.fill(0.0)
@@ -205,15 +242,16 @@ func append_neurons(target_count: int) -> void:
 	var add_count := target_count - current_neuron_count
 	if add_count <= 0:
 		return
-	var new_points := generate_brain_points(add_count)
-	var start_index := neuron_anchors.size()
-	for point in new_points:
-		neuron_anchors.append(point)
-		neuron_positions.append(point)
+	var inner_before := inner_neuron_count()
+	var inner_after := target_inner_count(target_count)
+	var inner_add := maxi(0, inner_after - inner_before)
+	var outer_add := maxi(0, add_count - inner_add)
+	append_layer_points(inner_add, outer_add)
 	current_neuron_count = neuron_anchors.size()
+	var start_index := current_neuron_count - add_count
 	init_motion_params(start_index, current_neuron_count)
 	pulse_levels.resize(current_neuron_count)
-	for i in range(current_neuron_count - add_count, current_neuron_count):
+	for i in range(start_index, current_neuron_count):
 		pulse_levels[i] = 0.0
 	rebuild_multimesh()
 	filament_dirty = true
@@ -221,37 +259,64 @@ func append_neurons(target_count: int) -> void:
 
 
 func clear_meshes() -> void:
-	if multimesh_instance != null:
-		multimesh_instance.queue_free()
-		multimesh_instance = null
-	if filament_mesh != null:
-		filament_mesh.queue_free()
-		filament_mesh = null
-	filament_surface = null
-	synapse_pairs.clear()
+	if multimesh_inner != null:
+		multimesh_inner.queue_free()
+		multimesh_inner = null
+	if multimesh_outer != null:
+		multimesh_outer.queue_free()
+		multimesh_outer = null
+	if filament_mesh_inner != null:
+		filament_mesh_inner.queue_free()
+		filament_mesh_inner = null
+	if filament_mesh_outer != null:
+		filament_mesh_outer.queue_free()
+		filament_mesh_outer = null
+	filament_surface_inner = null
+	filament_surface_outer = null
+	synapse_pairs_inner.clear()
+	synapse_pairs_outer.clear()
 	pass
 
 
 func rebuild_multimesh() -> void:
-	if neuron_shader == null:
-		neuron_shader = ShaderMaterial.new()
-		neuron_shader.shader = load("res://agent/ui/effects/shaders/jarvis_neuron.gdshader") as Shader
-	neuron_shader.set_shader_parameter("base_color", Color(0.0, 0.9, 1.0, 0.85))
+	var neuron_shader_res := load("res://agent/ui/effects/shaders/jarvis_neuron.gdshader") as Shader
+	if neuron_shader_inner == null:
+		neuron_shader_inner = ShaderMaterial.new()
+		neuron_shader_inner.shader = neuron_shader_res
+	if neuron_shader_outer == null:
+		neuron_shader_outer = ShaderMaterial.new()
+		neuron_shader_outer.shader = neuron_shader_res
+	neuron_shader_inner.set_shader_parameter("base_color", Color(0.0, 0.9, 1.0, 0.92))
+	neuron_shader_outer.set_shader_parameter("base_color", Color(0.0, 0.9, 1.0, 0.72))
+	rebuild_layer_multimesh(LAYER_OUTER, multimesh_outer, sphere_mesh_outer, neuron_shader_outer)
+	rebuild_layer_multimesh(LAYER_INNER, multimesh_inner, sphere_mesh_inner, neuron_shader_inner)
+	pass
 
+
+func rebuild_layer_multimesh(
+	layer: int,
+	instance_ref: MultiMeshInstance3D,
+	mesh: SphereMesh,
+	shader_mat: ShaderMaterial
+) -> void:
 	var multi := MultiMesh.new()
 	multi.transform_format = MultiMesh.TRANSFORM_3D
 	multi.use_colors = false
-	multi.mesh = sphere_mesh
-	multi.instance_count = neuron_positions.size()
-
-	for i in neuron_positions.size():
-		multi.set_instance_transform(i, neuron_instance_transform(i))
-
-	if multimesh_instance == null:
-		multimesh_instance = MultiMeshInstance3D.new()
-		multimesh_instance.material_override = neuron_shader
-		add_child(multimesh_instance)
-	multimesh_instance.multimesh = multi
+	multi.mesh = mesh
+	var layer_indices := collect_layer_indices(layer)
+	multi.instance_count = layer_indices.size()
+	for slot in layer_indices.size():
+		multi.set_instance_transform(slot, neuron_instance_transform(layer_indices[slot]))
+	var instance := instance_ref
+	if instance == null:
+		instance = MultiMeshInstance3D.new()
+		instance.material_override = shader_mat
+		add_child(instance)
+		if layer == LAYER_INNER:
+			multimesh_inner = instance
+		else:
+			multimesh_outer = instance
+	instance.multimesh = multi
 	pass
 
 
@@ -261,36 +326,62 @@ func build_neurons() -> void:
 
 
 func build_filaments() -> void:
-	synapse_pairs.clear()
-	var grid := build_spatial_grid(MAX_EDGE_DIST)
-	var stride := 1 if neuron_anchors.size() <= 650 else FILAMENT_SAMPLE_STRIDE
-	for i in range(0, neuron_anchors.size(), stride):
-		var neighbors := find_neighbors_spatial(i, grid)
-		for neighbor_index in neighbors:
-			if neighbor_index <= i:
-				continue
-			synapse_pairs.append(Vector2i(i, neighbor_index))
+	synapse_pairs_inner = build_synapse_pairs_for_layer(LAYER_INNER, INNER_MAX_EDGE_DIST, INNER_NEIGHBORS)
+	synapse_pairs_outer = build_synapse_pairs_for_layer(LAYER_OUTER, OUTER_MAX_EDGE_DIST, NEIGHBORS)
+	build_layer_filament_mesh(
+		synapse_pairs_outer,
+		filament_mesh_outer,
+		filament_surface_outer,
+		filament_shader_outer,
+		false
+	)
+	build_layer_filament_mesh(
+		synapse_pairs_inner,
+		filament_mesh_inner,
+		filament_surface_inner,
+		filament_shader_inner,
+		true
+	)
+	pass
 
-	var arrays := build_filament_arrays()
+
+func build_layer_filament_mesh(
+	pairs: Array[Vector2i],
+	mesh_instance_ref: MeshInstance3D,
+	surface_ref: ArrayMesh,
+	shader_ref: ShaderMaterial,
+	is_inner: bool
+) -> void:
+	var arrays := build_filament_arrays_from_pairs(pairs)
 	if arrays.is_empty():
 		return
-	if filament_surface == null:
-		filament_surface = ArrayMesh.new()
-	filament_surface.clear_surfaces()
-	filament_surface.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-
-	if filament_shader == null:
-		filament_shader = ShaderMaterial.new()
-		filament_shader.shader = load("res://agent/ui/effects/shaders/jarvis_filament.gdshader") as Shader
-		filament_shader.render_priority = 8
+	var surface := surface_ref
+	if surface == null:
+		surface = ArrayMesh.new()
+	surface.clear_surfaces()
+	surface.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	if shader_ref == null:
+		shader_ref = ShaderMaterial.new()
+		shader_ref.shader = load("res://agent/ui/effects/shaders/jarvis_filament.gdshader") as Shader
+		shader_ref.render_priority = 9 if is_inner else 8
+		if is_inner:
+			filament_shader_inner = shader_ref
+		else:
+			filament_shader_outer = shader_ref
 	sync_filament_theme()
-
-	if filament_mesh == null:
-		filament_mesh = MeshInstance3D.new()
-		filament_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		filament_mesh.material_override = filament_shader
-		add_child(filament_mesh)
-	filament_mesh.mesh = filament_surface
+	var mesh_instance := mesh_instance_ref
+	if mesh_instance == null:
+		mesh_instance = MeshInstance3D.new()
+		mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mesh_instance.material_override = shader_ref
+		add_child(mesh_instance)
+		if is_inner:
+			filament_mesh_inner = mesh_instance
+			filament_surface_inner = surface
+		else:
+			filament_mesh_outer = mesh_instance
+			filament_surface_outer = surface
+	mesh_instance.mesh = surface
 	pass
 
 
@@ -310,7 +401,8 @@ func init_motion_params(from_index: int, to_index: int) -> void:
 		neuron_tangent_b[i] = tangent_b
 		neuron_phases[i] = rng.randf_range(0.0, TAU)
 		neuron_speeds[i] = rng.randf_range(0.4, 1.05)
-		neuron_amps[i] = rng.randf_range(0.02, 0.048)
+		var is_inner := neuron_layers[i] == LAYER_INNER
+		neuron_amps[i] = rng.randf_range(0.012, 0.028) if is_inner else rng.randf_range(0.022, 0.052)
 	pass
 
 
@@ -329,22 +421,30 @@ func update_neuron_motion() -> void:
 
 
 func neuron_instance_transform(index: int) -> Transform3D:
-	var scale := Vector3.ONE * (0.85 + float(index % 5) * 0.04)
-	var basis := Basis.IDENTITY.scaled(scale)
+	var is_inner := neuron_layers[index] == LAYER_INNER
+	var scale_factor := 0.78 + float(index % 5) * 0.035 if is_inner else 0.85 + float(index % 5) * 0.04
+	var basis := Basis.IDENTITY.scaled(Vector3.ONE * scale_factor)
 	return Transform3D(basis, neuron_positions[index])
 
 
 func refresh_multimesh_transforms() -> void:
-	if multimesh_instance == null or multimesh_instance.multimesh == null:
-		return
-	var multi := multimesh_instance.multimesh
-	for i in neuron_positions.size():
-		multi.set_instance_transform(i, neuron_instance_transform(i))
+	refresh_layer_multimesh_transforms(LAYER_INNER, multimesh_inner)
+	refresh_layer_multimesh_transforms(LAYER_OUTER, multimesh_outer)
 	pass
 
 
-func build_filament_arrays() -> Array:
-	if synapse_pairs.is_empty():
+func refresh_layer_multimesh_transforms(layer: int, instance: MultiMeshInstance3D) -> void:
+	if instance == null or instance.multimesh == null:
+		return
+	var multi := instance.multimesh
+	var layer_indices := collect_layer_indices(layer)
+	for slot in layer_indices.size():
+		multi.set_instance_transform(slot, neuron_instance_transform(layer_indices[slot]))
+	pass
+
+
+func build_filament_arrays_from_pairs(pairs: Array[Vector2i]) -> Array:
+	if pairs.is_empty():
 		return []
 	sync_filament_viewport_uniform()
 	var verts := PackedVector3Array()
@@ -353,7 +453,7 @@ func build_filament_arrays() -> Array:
 	var uvs2 := PackedVector2Array()
 	var normals := PackedVector3Array()
 	var indices := PackedInt32Array()
-	for pair in synapse_pairs:
+	for pair in pairs:
 		append_filament_quad(
 			verts,
 			colors,
@@ -378,13 +478,23 @@ func build_filament_arrays() -> Array:
 
 
 func refresh_filament_vertices() -> void:
-	if filament_mesh == null or filament_surface == null or synapse_pairs.is_empty():
+	refresh_layer_filament_vertices(filament_mesh_inner, filament_surface_inner, synapse_pairs_inner)
+	refresh_layer_filament_vertices(filament_mesh_outer, filament_surface_outer, synapse_pairs_outer)
+	pass
+
+
+func refresh_layer_filament_vertices(
+	mesh_instance: MeshInstance3D,
+	surface: ArrayMesh,
+	pairs: Array[Vector2i]
+) -> void:
+	if mesh_instance == null or surface == null or pairs.is_empty():
 		return
-	var arrays := build_filament_arrays()
+	var arrays := build_filament_arrays_from_pairs(pairs)
 	if arrays.is_empty():
 		return
-	filament_surface.clear_surfaces()
-	filament_surface.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	surface.clear_surfaces()
+	surface.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	pass
 
 
@@ -426,16 +536,76 @@ func append_filament_quad(
 	pass
 
 
-func generate_brain_points(count: int) -> PackedVector3Array:
+func target_inner_count(total: int) -> int:
+	if total <= 0:
+		return 0
+	return clampi(maxi(1, int(round(float(total) * INNER_LAYER_RATIO))), 1, total)
+
+
+func inner_neuron_count() -> int:
+	var count := 0
+	for i in neuron_layers.size():
+		if neuron_layers[i] == LAYER_INNER:
+			count += 1
+	return count
+
+
+func assign_layer_points(inner_count: int, outer_count: int) -> void:
+	neuron_anchors = PackedVector3Array()
+	neuron_positions = PackedVector3Array()
+	neuron_layers = PackedByteArray()
+	append_layer_points(inner_count, outer_count)
+	pass
+
+
+func append_layer_points(inner_add: int, outer_add: int) -> void:
+	if inner_add > 0:
+		for point in generate_inner_core_points(inner_add):
+			neuron_anchors.append(point)
+			neuron_positions.append(point)
+			neuron_layers.append(LAYER_INNER)
+	if outer_add > 0:
+		for point in generate_outer_shell_points(outer_add):
+			neuron_anchors.append(point)
+			neuron_positions.append(point)
+			neuron_layers.append(LAYER_OUTER)
+	pass
+
+
+func collect_layer_indices(layer: int) -> Array[int]:
+	var indices: Array[int] = []
+	for i in neuron_layers.size():
+		if neuron_layers[i] == layer:
+			indices.append(i)
+	return indices
+
+
+func random_unit_direction() -> Vector3:
+	var u := rng.randf()
+	var v := rng.randf()
+	var theta := TAU * u
+	var phi := acos(2.0 * v - 1.0)
+	return Vector3(sin(phi) * cos(theta), sin(phi) * sin(theta), cos(phi)).normalized()
+
+
+func generate_inner_core_points(count: int) -> PackedVector3Array:
 	var points := PackedVector3Array()
 	for _i in count:
-		var u := rng.randf()
-		var v := rng.randf()
-		var theta := TAU * u
-		var phi := acos(2.0 * v - 1.0)
-		var x := sin(phi) * cos(theta)
-		var y := sin(phi) * sin(theta) * 0.92
-		var z := cos(phi) * 0.78
+		var dir := random_unit_direction()
+		var radius := INNER_CORE_RADIUS * pow(rng.randf(), 0.42)
+		var point := dir * radius
+		point += dir * rng.randf_range(-0.012, 0.012)
+		points.append(point)
+	return points
+
+
+func generate_outer_shell_points(count: int) -> PackedVector3Array:
+	var points := PackedVector3Array()
+	for _i in count:
+		var dir := random_unit_direction()
+		var x := dir.x
+		var y := dir.y * 0.92
+		var z := dir.z * 0.78
 		if x >= 0.0:
 			x += 0.07
 		else:
@@ -443,16 +613,39 @@ func generate_brain_points(count: int) -> PackedVector3Array:
 		x *= 0.88
 		y *= 1.05
 		z *= 0.82
-		x += rng.randf_range(-0.04, 0.04)
-		y += rng.randf_range(-0.04, 0.04)
-		z += rng.randf_range(-0.04, 0.04)
-		points.append(Vector3(x, y, z))
+		var shell_dir := Vector3(x, y, z).normalized()
+		var radial_jitter := (rng.randf() - 0.5) * 2.0 * OUTER_SHELL_RADIUS_SPREAD
+		radial_jitter *= pow(rng.randf(), 0.55)
+		var radius := OUTER_SHELL_RADIUS_CENTER + radial_jitter
+		var point := shell_dir * radius
+		point += shell_dir * rng.randf_range(-0.012, 0.012)
+		point.x += rng.randf_range(-0.01, 0.01)
+		point.y += rng.randf_range(-0.01, 0.01)
+		point.z += rng.randf_range(-0.01, 0.01)
+		points.append(point)
 	return points
 
 
-func build_spatial_grid(cell_size: float) -> Dictionary:
+func build_synapse_pairs_for_layer(layer: int, max_edge: float, neighbor_count: int) -> Array[Vector2i]:
+	var pairs: Array[Vector2i] = []
+	var grid := build_spatial_grid_for_layer(layer, max_edge)
+	var layer_indices := collect_layer_indices(layer)
+	var stride := 1 if layer_indices.size() <= 420 else FILAMENT_SAMPLE_STRIDE
+	for slot in range(0, layer_indices.size(), stride):
+		var index := layer_indices[slot]
+		var neighbors := find_neighbors_spatial(index, grid, max_edge, neighbor_count, layer)
+		for neighbor_index in neighbors:
+			if neighbor_index <= index:
+				continue
+			pairs.append(Vector2i(index, neighbor_index))
+	return pairs
+
+
+func build_spatial_grid_for_layer(layer: int, cell_size: float) -> Dictionary:
 	var grid: Dictionary = {}
 	for i in neuron_anchors.size():
+		if neuron_layers[i] != layer:
+			continue
 		var cell := cell_key(neuron_anchors[i], cell_size)
 		if not grid.has(cell):
 			grid[cell] = [] as Array[int]
@@ -468,11 +661,17 @@ func cell_key(point: Vector3, cell_size: float) -> Vector3i:
 	)
 
 
-func find_neighbors_spatial(index: int, grid: Dictionary) -> Array[int]:
+func find_neighbors_spatial(
+	index: int,
+	grid: Dictionary,
+	max_edge: float,
+	neighbor_count: int,
+	layer: int
+) -> Array[int]:
 	var origin := neuron_anchors[index]
 	var result: Array[int] = []
 	var dists: Array[float] = []
-	var origin_cell := cell_key(origin, MAX_EDGE_DIST)
+	var origin_cell := cell_key(origin, max_edge)
 	for ox in range(-1, 2):
 		for oy in range(-1, 2):
 			for oz in range(-1, 2):
@@ -480,10 +679,10 @@ func find_neighbors_spatial(index: int, grid: Dictionary) -> Array[int]:
 				if bucket == null:
 					continue
 				for j: int in bucket as Array[int]:
-					if j == index:
+					if j == index or neuron_layers[j] != layer:
 						continue
 					var dist := origin.distance_to(neuron_anchors[j])
-					if dist > MAX_EDGE_DIST:
+					if dist > max_edge:
 						continue
 					var insert_at := result.size()
 					for k in result.size():
@@ -492,7 +691,7 @@ func find_neighbors_spatial(index: int, grid: Dictionary) -> Array[int]:
 							break
 					result.insert(insert_at, j)
 					dists.insert(insert_at, dist)
-					if result.size() > NEIGHBORS:
+					if result.size() > neighbor_count:
 						result.pop_back()
 						dists.pop_back()
 	return result
