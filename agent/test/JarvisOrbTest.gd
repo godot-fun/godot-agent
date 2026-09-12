@@ -16,6 +16,7 @@ var demo_generation: int = 0
 @onready var status_label: Label = $Ui/StatusLabel
 @onready var play_button: Button = $Ui/Buttons/PlayDemo
 @onready var stop_button: Button = $Ui/Buttons/Stop
+@onready var theme_color_select: Button = $Ui/Buttons/ThemeColorSelect
 @onready var theme_toggle_button: Button = $Ui/Buttons/ThemeToggle
 @onready var reasoning_button: Button = $Ui/StepButtons/Reasoning
 @onready var generate_button: Button = $Ui/StepButtons/Generate
@@ -23,12 +24,14 @@ var demo_generation: int = 0
 @onready var error_button: Button = $Ui/StepButtons/ErrorEnd
 
 var theme_toggle: ThemeToggle = ThemeToggle.new()
+var theme_color_select_ctrl: ThemeColorSelect = ThemeColorSelect.new()
 
 
 func _ready() -> void:
 	AgentColors.load_saved_theme()
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	setup_demo_session()
+	theme_color_select_ctrl.setup(theme_color_select)
 	theme_toggle.setup(theme_toggle_button)
 	AgentEvents.events.theme_changed.connect(on_theme_changed)
 	apply_scene_theme()

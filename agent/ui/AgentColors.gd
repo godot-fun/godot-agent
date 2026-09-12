@@ -9,8 +9,11 @@ enum ColorScheme {
 }
 
 const SETTING_KEY := "agent_dark_theme"
+const THEME_COLOR_SETTING_KEY := "agent_theme_color"
+const DEFAULT_THEME_COLOR := Color(0.05, 0.98, 0.52, 0.58)
 
 static var current_scheme: ColorScheme = ColorScheme.DARK
+static var theme_color: Color = DEFAULT_THEME_COLOR
 
 static var sidebar: Color
 static var sidebar_border: Color
@@ -64,6 +67,29 @@ static func is_dark() -> bool:
 static func load_saved_theme() -> void:
 	var use_dark := Setting.get_bool(SETTING_KEY, true)
 	apply_color_scheme(ColorScheme.DARK if use_dark else ColorScheme.LIGHT, false, false)
+	load_theme_color_from_settings()
+	pass
+
+
+static func load_theme_color_from_settings() -> void:
+	var saved := Setting.get_string(THEME_COLOR_SETTING_KEY, "")
+	if saved.is_empty():
+		theme_color = DEFAULT_THEME_COLOR
+		return
+	theme_color = Color.from_string(saved, DEFAULT_THEME_COLOR)
+	pass
+
+
+static func set_theme_color(new_color: Color) -> void:
+	theme_color = new_color
+	Setting.set_string(THEME_COLOR_SETTING_KEY, theme_color.to_html(true))
+	Setting.save()
+	AgentEvents.events.theme_color_changed.emit(theme_color)
+	pass
+
+
+static func orb_synapse_line_color() -> Color:
+	return theme_color
 
 
 static func toggle_theme() -> void:

@@ -17,9 +17,6 @@ const FILAMENT_SAMPLE_STRIDE := 2
 ## Screen-space synapse width (expanded in jarvis_filament.gdshader vertex).
 const FILAMENT_LINE_WIDTH_PX := 0.85
 const FILAMENT_LINE_AA_PX := 0.3
-## Synapse lines — fixed tech green, semi-transparent (alpha in shader).
-const SYNAPSE_LINE_COLOR := Color(0.05, 0.98, 0.52, 0.58)
-
 var neuron_anchors: PackedVector3Array = PackedVector3Array()
 var neuron_positions: PackedVector3Array = PackedVector3Array()
 var neuron_phases: PackedFloat32Array = PackedFloat32Array()
@@ -69,10 +66,25 @@ func _ready() -> void:
 	sphere_mesh_outer.height = 0.036
 	sphere_mesh_outer.radial_segments = 6
 	sphere_mesh_outer.rings = 4
+	AgentColors.load_theme_color_from_settings()
 	rebuild_neurons(OrbGrowth.NEURON_MIN)
 	var vp := get_viewport()
 	if vp != null and not vp.size_changed.is_connected(sync_filament_viewport_uniform):
 		vp.size_changed.connect(sync_filament_viewport_uniform)
+	if not AgentEvents.events.theme_color_changed.is_connected(on_theme_color_changed):
+		AgentEvents.events.theme_color_changed.connect(on_theme_color_changed)
+	if not AgentEvents.events.theme_changed.is_connected(on_ui_theme_changed):
+		AgentEvents.events.theme_changed.connect(on_ui_theme_changed)
+	pass
+
+
+func on_theme_color_changed(_color: Color) -> void:
+	sync_filament_theme()
+	pass
+
+
+func on_ui_theme_changed(_is_dark: bool) -> void:
+	sync_filament_theme()
 	pass
 
 
@@ -185,20 +197,28 @@ func apply_display_color(color: Color) -> void:
 		neuron_shader_inner.set_shader_parameter("base_color", Color(color.r, color.g, color.b, 0.92))
 	if neuron_shader_outer != null:
 		neuron_shader_outer.set_shader_parameter("base_color", Color(color.r, color.g, color.b, 0.72))
-	sync_filament_theme()
+	apply_filament_theme_color()
+	pass
+
+
+func apply_filament_theme_color() -> void:
+	var line_color := AgentColors.orb_synapse_line_color()
+	if filament_shader_inner != null:
+		filament_shader_inner.set_shader_parameter("line_color", line_color)
+	if filament_shader_outer != null:
+		filament_shader_outer.set_shader_parameter("line_color", line_color)
 	pass
 
 
 func sync_filament_theme() -> void:
 	var inner_strength := 0.88 if AgentColors.is_dark() else 0.62
 	var outer_strength := 0.72 if AgentColors.is_dark() else 0.48
+	apply_filament_theme_color()
 	if filament_shader_inner != null:
-		filament_shader_inner.set_shader_parameter("line_color", SYNAPSE_LINE_COLOR)
 		filament_shader_inner.set_shader_parameter("line_strength", inner_strength)
 		filament_shader_inner.set_shader_parameter("line_width_px", FILAMENT_LINE_WIDTH_PX * 0.95)
 		filament_shader_inner.set_shader_parameter("line_aa_px", FILAMENT_LINE_AA_PX)
 	if filament_shader_outer != null:
-		filament_shader_outer.set_shader_parameter("line_color", SYNAPSE_LINE_COLOR)
 		filament_shader_outer.set_shader_parameter("line_strength", outer_strength)
 		filament_shader_outer.set_shader_parameter("line_width_px", FILAMENT_LINE_WIDTH_PX)
 		filament_shader_outer.set_shader_parameter("line_aa_px", FILAMENT_LINE_AA_PX)

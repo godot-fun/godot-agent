@@ -70,6 +70,12 @@ text = "Play Demo"
 layout_mode = 2
 text = "Stop"
 
+[node name="ThemeColorSelect" type="Button" parent="Ui/Buttons"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+
 [node name="ThemeToggle" type="Button" parent="Ui/Buttons"]
 layout_mode = 2
 tooltip_text = "Switch theme"

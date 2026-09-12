@@ -22,6 +22,7 @@ extends Control
 @onready var send_button: Button = $Root/Body/ChatArea/InputBar/InputWrap/InputInner/SendButton
 @onready var project_button: Button = $Root/Toolbar/ToolbarRow/ProjectButton
 @onready var log_button: Button = $Root/Toolbar/ToolbarRow/LogButtonWrap/LogButton
+@onready var theme_color_select: Button = $Root/Toolbar/ToolbarRow/ThemeColorSelectWrap/ThemeColorSelect
 @onready var theme_toggle_button: Button = $Root/Toolbar/ToolbarRow/ThemeToggleWrap/ThemeToggleButton
 @onready var workspace_dialog: FileDialog = $WorkspaceDialog
 
@@ -29,6 +30,7 @@ var toolbar: AgentToolbar = AgentToolbar.new()
 var chat_area: ChatArea = ChatArea.new()
 var chat_input: AgentChatInput = AgentChatInput.new()
 var theme_toggle: ThemeToggle = ThemeToggle.new()
+var theme_color_select_ctrl: ThemeColorSelect = ThemeColorSelect.new()
 var log_panel: AgentLogPanel = AgentLogPanel.new()
 var jarvis_toggle: JarvisToggle = JarvisToggle.new()
 var skill_bubble: SkillBubble = SkillBubble.new()
@@ -50,6 +52,7 @@ func _ready() -> void:
 	chat_view.setup(chat_scroll, chat_host)
 
 	chat_input.setup(input_bar, input_wrap, input_inner, input_field, send_button)
+	theme_color_select_ctrl.setup(theme_color_select)
 	theme_toggle.setup(theme_toggle_button)
 	# Log window is created in code (AgentTextPopup), not as a scene node.
 	log_panel.setup(log_button, self)

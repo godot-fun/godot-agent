@@ -110,6 +110,20 @@ focus_mode = 0
 mouse_default_cursor_shape = 2
 text = "Log"
 
+[node name="ThemeColorSelectWrap" type="MarginContainer" parent="Root/Toolbar/ToolbarRow"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_constants/margin_right = 6
+
+[node name="ThemeColorSelect" type="Button" parent="Root/Toolbar/ToolbarRow/ThemeColorSelectWrap"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+focus_mode = 0
+mouse_default_cursor_shape = 2
+
 [node name="ThemeToggleWrap" type="MarginContainer" parent="Root/Toolbar/ToolbarRow" unique_id=753340597]
 layout_mode = 2
 size_flags_horizontal = 4
