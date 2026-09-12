@@ -1,7 +1,7 @@
 shader_type spatial;
 render_mode blend_add, depth_test_disabled, depth_draw_never, cull_disabled, unshaded;
 
-uniform vec4 line_color : source_color = vec4(1.0, 1.0, 1.0, 1.0);
+uniform vec4 line_color : source_color = vec4(0.05, 0.98, 0.52, 0.58);
 uniform float line_strength : hint_range(0.0, 1.5) = 0.52;
 uniform float line_width_px : hint_range(0.5, 8.0) = 0.85;
 uniform float line_aa_px : hint_range(0.0, 3.0) = 0.3;
@@ -38,7 +38,9 @@ void fragment() {
 	float dist_px = abs(UV.y - 0.5) * 2.0 * half_total;
 	float half_core = line_width_px * 0.5;
 	float cover = 1.0 - smoothstep(half_core, half_core + line_aa_px, dist_px);
+	float alpha = line_color.a * line_strength * cover;
 	vec3 col = line_color.rgb * line_strength * cover;
 	ALBEDO = col;
-	EMISSION = col;
+	EMISSION = col * 1.65;
+	ALPHA = alpha;
 }

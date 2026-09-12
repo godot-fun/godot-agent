@@ -9,8 +9,8 @@ const FILAMENT_SAMPLE_STRIDE := 2
 ## Screen-space synapse width (expanded in jarvis_filament.gdshader vertex).
 const FILAMENT_LINE_WIDTH_PX := 0.85
 const FILAMENT_LINE_AA_PX := 0.3
-## White synapse lines (intensity via shader; not phase-tinted).
-const SYNAPSE_LINE_COLOR := Color(1.0, 1.0, 1.0, 1.0)
+## Synapse lines — fixed tech green, semi-transparent (alpha in shader).
+const SYNAPSE_LINE_COLOR := Color(0.05, 0.98, 0.52, 0.58)
 
 var neuron_anchors: PackedVector3Array = PackedVector3Array()
 var neuron_positions: PackedVector3Array = PackedVector3Array()
@@ -164,7 +164,7 @@ func sync_filament_theme() -> void:
 	filament_shader.set_shader_parameter("line_color", SYNAPSE_LINE_COLOR)
 	filament_shader.set_shader_parameter(
 		"line_strength",
-		0.52 if AgentColors.is_dark() else 0.28
+		0.78 if AgentColors.is_dark() else 0.55
 	)
 	filament_shader.set_shader_parameter("line_width_px", FILAMENT_LINE_WIDTH_PX)
 	filament_shader.set_shader_parameter("line_aa_px", FILAMENT_LINE_AA_PX)
