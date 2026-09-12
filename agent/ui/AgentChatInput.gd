@@ -489,8 +489,7 @@ func style_wrap() -> void:
 func build_wrap_style(is_expanded: bool) -> StyleBoxFlat:
 	var wrap_style := StyleBoxFlat.new()
 	wrap_style.bg_color = AgentColors.chat_input
-	wrap_style.border_color = AgentColors.chat_input_border.darkened(0.12)
-	wrap_style.set_border_width_all(1)
+	wrap_style.set_border_width_all(0)
 	var radius := 16 if is_expanded else int(COLLAPSED_SIZE / 2)
 	wrap_style.set_corner_radius_all(radius)
 	if AgentColors.is_dark():
@@ -623,7 +622,6 @@ class InputBorderBeamLayer extends Control:
 	const BEAM_SPAN := 0.20
 	const BORDER_WIDTH := 2.0
 	const GLOW_WIDTH := 5.0
-	const BASE_BORDER_ALPHA := 0.22
 	const BEAM_CORE_ALPHA := 0.95
 	const BEAM_TAIL_SAMPLES := 48
 
@@ -741,10 +739,6 @@ class InputBorderBeamLayer extends Control:
 		var accent := AgentColors.theme_color
 		var strength := highlight_strength
 
-		var base_col := accent
-		base_col.a = BASE_BORDER_ALPHA * (0.65 + strength * 0.35)
-		draw_rounded_rect_stroke(inner, radius, base_col, 1.0)
-
 		var perim := perimeter(inner.size, radius)
 		var head_dist := phase * perim
 		var span := perim * BEAM_SPAN
@@ -769,29 +763,4 @@ class InputBorderBeamLayer extends Control:
 				var core := accent.lightened(0.08)
 				core.a = maxf(a0, a1) * BEAM_CORE_ALPHA
 				draw_line(points[i], points[i + 1], core, BORDER_WIDTH, true)
-
-		var head := inner.position + point_on_rounded_rect(inner.size, radius, head_dist)
-		var head_glow := accent
-		head_glow.a = 0.55 * strength
-		draw_circle(head, GLOW_WIDTH * 0.55, head_glow)
-		var head_core := accent.lightened(0.15)
-		head_core.a = 0.9 * strength
-		draw_circle(head, BORDER_WIDTH * 0.9, head_core)
-		pass
-
-
-	func draw_rounded_rect_stroke(rect: Rect2, radius: float, color: Color, width: float) -> void:
-		var r := minf(radius, minf(rect.size.x, rect.size.y) * 0.5)
-		var tl := rect.position
-		var tr := rect.position + Vector2(rect.size.x, 0.0)
-		var br := rect.position + rect.size
-		var bl := rect.position + Vector2(0.0, rect.size.y)
-		draw_line(tl + Vector2(r, 0.0), tr - Vector2(r, 0.0), color, width, true)
-		draw_line(tr + Vector2(0.0, r), br - Vector2(0.0, r), color, width, true)
-		draw_line(br - Vector2(r, 0.0), bl + Vector2(r, 0.0), color, width, true)
-		draw_line(bl - Vector2(0.0, r), tl + Vector2(0.0, r), color, width, true)
-		draw_arc(tl + Vector2(r, r), r, PI, PI * 1.5, 24, color, width, true)
-		draw_arc(tr + Vector2(-r, r), r, PI * 1.5, TAU, 24, color, width, true)
-		draw_arc(br + Vector2(-r, -r), r, 0.0, PI * 0.5, 24, color, width, true)
-		draw_arc(bl + Vector2(r, -r), r, PI * 0.5, PI, 24, color, width, true)
 		pass
